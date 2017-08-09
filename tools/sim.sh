@@ -14,8 +14,8 @@
 #export TOP=l2_ptr_st_tb
 #export TOP=l2_stream_control_tb
 #export TOP=l2_ctrl_top_tb
-export TOP=apl_top_tb
-#export TOP=axi_tag_tb
+#export TOP=apl_top_tb
+export TOP=interface_tag_tb
 
 # Script terminates after the first non-zero exit code.
 set -e
@@ -29,7 +29,7 @@ set -e
 # - check if iverilog, vvp and gtkwave are installed
 # - set variables for GTKPATH accordingly.
 # - decide on GTKPATH variable here since we already check the OS here.
-#TODO: test if .sim-iverilog and .gen-todo are executable. If not, run chmod +x.
+#TODO: test if sim.sh and todo.sh are executable. If not, run chmod +x.
 
 # Locations of the (System)Verilog source files.
 export BASE=../../base
@@ -44,12 +44,10 @@ if [ ! -d "$WORK" ]; then
 	mkdir $WORK
 fi
 
-#TODO: make sure all .sv files compile. then you can use $SRC/*.sv and $TB/*.sv -> #iverilog -DVCD -o $WORK/$TOP.out -s $TOP $BASE/*.sv $SRC/*.sv $TB/*.sv
 #TODO: add -Wall to display all warnings. timescale as well, but i dont use that.
 #TODO: use lxt format which is faster
 #TODO: for uram/bram sims, ifdef XILINX use their module, otherwise use behav model.
-iverilog -DVCD -o $WORK/$TOP.out -s $TOP $BASE/*.sv $SRC/ptr_st.sv $SRC/rd_ctrl_top.sv $SRC/rd_port.sv $SRC/req_merge.sv $TB/rd_ctrl_top_tb.sv $SRC/l2_stream_control.sv $TB/l2_stream_control_tb.sv $SRC/l2_ctrl_top.sv $TB/l2_ctrl_top_tb.sv $SRC/apl_top.sv $TB/apl_top_tb.sv $SRC/axi_tag.sv $TB/axi_tag_tb.sv
-#iverilog -DVCD -DSIM -o $WORK/$TOP.out -s $TOP $BASE/*.sv $SRC/ptr_st.sv $SRC/rd_ctrl_top.sv $SRC/rd_port.sv $SRC/req_merge.sv $SRC/bram_tile.sv $TB/bram_tile_tb.sv
+iverilog -DVCD -o $WORK/$TOP.out -s $TOP $BASE/*.sv $SRC/*.sv $TB/*.sv
 vvp $WORK/$TOP.out
 mv $TOP.vcd $WORK/$TOP.vcd # VCD file is dumped in same directory as this script. Move it to the work folder.
 
@@ -87,6 +85,4 @@ else
 fi
 
 # TODO: make a clean script to delete the 'work' folder
-
-# Update to-do list.
-#./gen-todo.sh
+# run todo.sh script for list of todos in source code
