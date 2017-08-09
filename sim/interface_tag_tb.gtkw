@@ -1,27 +1,55 @@
 [*]
 [*] GTKWave Analyzer v3.3.82 (w)1999-2017 BSI
-[*] Wed Aug  9 11:09:06 2017
+[*] Wed Aug  9 12:10:30 2017
 [*]
 [dumpfile] "/Users/ytbmulder/Google Drive/Thesis/Verilog/stream-cache/work/interface_tag_tb.vcd"
-[dumpfile_mtime] "Wed Aug  9 11:08:10 2017"
-[dumpfile_size] 267174
+[dumpfile_mtime] "Wed Aug  9 12:05:43 2017"
+[dumpfile_size] 268171
 [savefile] "/Users/ytbmulder/Google Drive/Thesis/Verilog/stream-cache/sim/interface_tag_tb.gtkw"
 [timestart] 88
-[size] 1440 851
+[size] 1440 900
 [pos] -1 -1
-*-3.000000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-3.000000 100 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] interface_tag_tb.
+[treeopen] interface_tag_tb.IDUT.
 [sst_width] 193
-[signals_width] 150
+[signals_width] 176
 [sst_expanded] 1
-[sst_vpaned_height] 256
+[sst_vpaned_height] 273
 @28
 interface_tag_tb.IDUT.clk
 interface_tag_tb.IDUT.reset
+@200
+-REQ INPUT
+@28
 interface_tag_tb.IDUT.i_req_v
 interface_tag_tb.IDUT.i_req_r
 @24
 interface_tag_tb.IDUT.i_req_sid[5:0]
 interface_tag_tb.IDUT.i_req_ea[63:0]
+@200
+-REQ OUTPUT
+@28
+interface_tag_tb.IDUT.o_req_v
+interface_tag_tb.IDUT.o_req_r
+@22
+interface_tag_tb.IDUT.o_req_tag[7:0]
+@24
+interface_tag_tb.IDUT.o_req_ea[63:0]
+@200
+-RSP INPUT
+@28
+interface_tag_tb.IDUT.i_rsp_v
+interface_tag_tb.IDUT.i_rsp_r
+@22
+interface_tag_tb.IDUT.i_rsp_tag[7:0]
+@200
+-RSP OUTPUT
+@28
+interface_tag_tb.IDUT.o_rsp_v
+interface_tag_tb.IDUT.o_rsp_r
+@24
+interface_tag_tb.IDUT.o_rsp_sid[5:0]
+interface_tag_tb.IDUT.o_rsp_ptr[7:0]
 [pattern_trace] 1
 [pattern_trace] 0

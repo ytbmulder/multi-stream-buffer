@@ -35,7 +35,7 @@ module interface_tag #
   // RESPONSE OUTPUT INTERFACE
   output                    o_rsp_v,
   input                     o_rsp_r,
-  output [data_width-1:0]   o_rsp_d, //TODO: call this _data like i_rsp_data
+  output [data_width-1:0]   o_rsp_data,
   output [nstrms_width-1:0] o_rsp_sid,
   output [l2_ncl_width-1:0] o_rsp_ptr,
 
@@ -163,6 +163,7 @@ module interface_tag #
   );
 
   // TODO: is it possible that a conflict occurs? (read & write from same address)
+  // TODO: why is the read delay 0 cycles? shouldnt there be a delay there a well?
   wire [nstrms_width-1:0] s2_req_sid;
   wire [l2_ncl_width-1:0] s2_req_ptr;
   base_mem # (
@@ -174,8 +175,8 @@ module interface_tag #
     .clk (clk),
     .we  (s1_comb_act),
     .wa  (s1_res_o_tag),
-    .wd  (s1_sram_wd), //{s1_req_sid, s1_req_ea[l2_ncl_width-1:0]}
-    .re  (s2_sram_en),
+    .wd  (s1_sram_wd),
+    .re  (s2_sram_en), // TODO: enable only when it actually needs to be read.
     .ra  (s1_rsp_tag),
     .rd  ({s2_req_sid, s2_req_ptr})
   );
@@ -195,7 +196,7 @@ module interface_tag #
 
   assign o_rsp_v = s2_comb_rsp_v;
   assign s2_comb_rsp_r = o_rsp_r;
-  assign o_rsp_d = s2_rsp_data;
+  assign o_rsp_data = s2_rsp_data;
   assign o_rsp_sid = s2_req_sid;
   assign o_rsp_ptr = s2_req_ptr;
 

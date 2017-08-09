@@ -4,9 +4,8 @@
 # This script was tested with the following application versions:
 # - macOS 10.12.5
 # - bash 3.2
-# - iverilog 10.1.1
-# - vvp 10.1.1
-# - gtkwave 3.3.79
+# - icarus-verilog 10.1.1
+# - gtkwave 3.3.82
 
 # User defined top level module name.
 #export TOP=rd_ctrl_top_tb
@@ -18,8 +17,7 @@
 export TOP=interface_tag_tb
 
 # Script terminates after the first non-zero exit code.
-set -e
-#set -euo pipefail
+set -euo pipefail
 
 #TODO: set the correct path (../sim/) for .gtkw files when directly saved instead of saved as.
 
