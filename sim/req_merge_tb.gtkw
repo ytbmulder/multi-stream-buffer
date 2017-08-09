@@ -1,0 +1,104 @@
+[*]
+[*] GTKWave Analyzer v3.3.79 (w)1999-2017 BSI
+[*] Mon Jul 10 15:06:57 2017
+[*]
+[dumpfile] "/Users/ytbmulder/Google Drive/Thesis/Verilog/stream-cache/work/req_merge_tb.vcd"
+[dumpfile_mtime] "Mon Jul 10 14:37:18 2017"
+[dumpfile_size] 63576
+[savefile] "/Users/ytbmulder/Google Drive/Thesis/Verilog/stream-cache/sim/req_merge_tb.gtkw"
+[timestart] 208
+[size] 1280 1036
+[pos] -1 -1
+*-3.000000 216 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] req_merge_tb.
+[treeopen] req_merge_tb.IDUT.
+[sst_width] 232
+[signals_width] 282
+[sst_expanded] 1
+[sst_vpaned_height] 322
+@200
+-TOP IO
+@28
+req_merge_tb.IDUT.clk
+req_merge_tb.IDUT.reset
+@c00022
+req_merge_tb.IDUT.i_clreq_v[15:0]
+@28
+(0)req_merge_tb.IDUT.i_clreq_v[15:0]
+(1)req_merge_tb.IDUT.i_clreq_v[15:0]
+(2)req_merge_tb.IDUT.i_clreq_v[15:0]
+(3)req_merge_tb.IDUT.i_clreq_v[15:0]
+(4)req_merge_tb.IDUT.i_clreq_v[15:0]
+(5)req_merge_tb.IDUT.i_clreq_v[15:0]
+(6)req_merge_tb.IDUT.i_clreq_v[15:0]
+(7)req_merge_tb.IDUT.i_clreq_v[15:0]
+(8)req_merge_tb.IDUT.i_clreq_v[15:0]
+(9)req_merge_tb.IDUT.i_clreq_v[15:0]
+(10)req_merge_tb.IDUT.i_clreq_v[15:0]
+(11)req_merge_tb.IDUT.i_clreq_v[15:0]
+(12)req_merge_tb.IDUT.i_clreq_v[15:0]
+(13)req_merge_tb.IDUT.i_clreq_v[15:0]
+(14)req_merge_tb.IDUT.i_clreq_v[15:0]
+(15)req_merge_tb.IDUT.i_clreq_v[15:0]
+@1401200
+-group_end
+@c00022
+req_merge_tb.IDUT.i_clreq_r[15:0]
+@28
+(0)req_merge_tb.IDUT.i_clreq_r[15:0]
+(1)req_merge_tb.IDUT.i_clreq_r[15:0]
+(2)req_merge_tb.IDUT.i_clreq_r[15:0]
+(3)req_merge_tb.IDUT.i_clreq_r[15:0]
+(4)req_merge_tb.IDUT.i_clreq_r[15:0]
+(5)req_merge_tb.IDUT.i_clreq_r[15:0]
+(6)req_merge_tb.IDUT.i_clreq_r[15:0]
+(7)req_merge_tb.IDUT.i_clreq_r[15:0]
+(8)req_merge_tb.IDUT.i_clreq_r[15:0]
+(9)req_merge_tb.IDUT.i_clreq_r[15:0]
+(10)req_merge_tb.IDUT.i_clreq_r[15:0]
+(11)req_merge_tb.IDUT.i_clreq_r[15:0]
+(12)req_merge_tb.IDUT.i_clreq_r[15:0]
+(13)req_merge_tb.IDUT.i_clreq_r[15:0]
+(14)req_merge_tb.IDUT.i_clreq_r[15:0]
+(15)req_merge_tb.IDUT.i_clreq_r[15:0]
+@1401200
+-group_end
+@28
+req_merge_tb.IDUT.o_v
+req_merge_tb.IDUT.o_r
+@22
+req_merge_tb.IDUT.o_clid_req[3:0]
+@200
+-S0
+@22
+req_merge_tb.IDUT.s0_clreq_v[15:0]
+req_merge_tb.IDUT.s0_clreq_r[15:0]
+@28
+req_merge_tb.IDUT.s0_gen_v[3:0]
+req_merge_tb.IDUT.s0_gen_r[3:0]
+@200
+-GEN RR MUX {0,1,2,3}
+@28
+req_merge_tb.IDUT.GEN_S0_RRMUX[0].s0_gen_sel_enc[1:0]
+req_merge_tb.IDUT.GEN_S0_RRMUX[1].s0_gen_sel_enc[1:0]
+req_merge_tb.IDUT.GEN_S0_RRMUX[2].s0_gen_sel_enc[1:0]
+req_merge_tb.IDUT.GEN_S0_RRMUX[3].s0_gen_sel_enc[1:0]
+@22
+req_merge_tb.IDUT.s1_gen_sel_enc[7:0]
+@200
+-FINAL MERGE
+@22
+req_merge_tb.IDUT.s1_gen_v[3:0]
+req_merge_tb.IDUT.s1_gen_r[3:0]
+@28
+req_merge_tb.IDUT.s1_merge_data[1:0]
+req_merge_tb.IDUT.s1_sel_enc[1:0]
+@200
+-TEST
+@22
+req_merge_tb.IDUT.s0_clreq_v[15:0]
+@28
+req_merge_tb.IDUT.s1_gen_sel_enc[7:0]
+req_merge_tb.IDUT.s1_merge_data[1:0]
+[pattern_trace] 1
+[pattern_trace] 0

@@ -1,0 +1,40 @@
+[*]
+[*] GTKWave Analyzer v3.3.79 (w)1999-2017 BSI
+[*] Tue Jul 18 20:24:39 2017
+[*]
+[dumpfile] "/Users/ytbmulder/Google Drive/Thesis/Verilog/stream-cache/work/l2_stream_control_tb.vcd"
+[dumpfile_mtime] "Tue Jul 18 20:20:14 2017"
+[dumpfile_size] 54483
+[savefile] "/Users/ytbmulder/Google Drive/Thesis/Verilog/stream-cache/sim/l2_stream_control_tb.gtkw"
+[timestart] 95
+[size] 1920 1036
+[pos] -1 -1
+*-2.000000 112 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] l2_stream_control_tb.
+[treeopen] l2_stream_control_tb.IDUT.
+[sst_width] 193
+[signals_width] 159
+[sst_expanded] 1
+[sst_vpaned_height] 322
+@28
+l2_stream_control_tb.IDUT.clk
+l2_stream_control_tb.IDUT.reset
+l2_stream_control_tb.IDUT.i_rst_v
+l2_stream_control_tb.IDUT.i_rst_r
+l2_stream_control_tb.IDUT.i_rd_v
+l2_stream_control_tb.IDUT.i_rd_r
+l2_stream_control_tb.IDUT.o_addr_v
+l2_stream_control_tb.IDUT.o_addr_r
+@24
+l2_stream_control_tb.IDUT.o_addr_ptr[7:0]
+@28
+l2_stream_control_tb.IDUT.o_req_v
+l2_stream_control_tb.IDUT.o_req_r
+l2_stream_control_tb.IDUT.i_rsp_v
+l2_stream_control_tb.IDUT.i_rsp_r
+@200
+-INTERNAL
+@24
+l2_stream_control_tb.IDUT.is0_ncl_valid_incdec.o_cnt[0:8]
+[pattern_trace] 1
+[pattern_trace] 0
