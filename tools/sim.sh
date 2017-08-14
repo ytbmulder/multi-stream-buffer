@@ -7,14 +7,14 @@
 # - icarus-verilog 10.1.1
 # - gtkwave 3.3.82
 
-# User defined top level module name.
+# Define top level module name.
 #export TOP=rd_ctrl_top_tb
-#export TOP=bram_tile_tb
+#export TOP=l2_merge_tb
 #export TOP=l2_ptr_st_tb
-#export TOP=l2_stream_control_tb
+#export TOP=l2_stream_ptr_tb
 #export TOP=l2_ctrl_top_tb
-#export TOP=apl_top_tb
-export TOP=interface_tag_tb
+export TOP=apl_top_tb
+#export TOP=interface_tag_tb
 
 # Script terminates after the first non-zero exit code.
 set -euo pipefail

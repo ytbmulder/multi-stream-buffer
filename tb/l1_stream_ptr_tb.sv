@@ -1,4 +1,4 @@
-module ptr_st_tb;
+module l1_stream_ptr_tb;
    reg clk;
 
    always
@@ -35,6 +35,6 @@ module ptr_st_tb;
    wire rst_r;
    base_vlat_en#(.width(rstcnt_width)) irstcnt_lat(.clk(clk),.reset(reset),.din(rst_cnt+1'b1),.q(rst_cnt),.enable(~rst_v | rst_r));
 
-   ptr_st idut(.clk(clk),.reset(reset),.i_rd_v(rd_v),.i_rd_r(rd_r),.i_rst_v(rst_v),.i_rst_r(rst_r),.i_clrsp_v(rsp_v),.i_clrsp_r(rsp_r),.o_clreq_v(req_v),.o_clreq_r(req_r));
+   l1_stream_ptr idut(.clk(clk),.reset(reset),.i_rd_v(rd_v),.i_rd_r(rd_r),.i_rst_v(rst_v),.i_rst_r(rst_r),.i_clrsp_v(rsp_v),.i_clrsp_r(rsp_r),.o_clreq_v(req_v),.o_clreq_r(req_r));
 
-endmodule // test_top
+endmodule // l1_stream_ptr_tb

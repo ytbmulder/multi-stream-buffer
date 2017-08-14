@@ -1,4 +1,4 @@
-module rd_ctrl_top_tb;
+module l1_ctrl_top_tb;
 
     parameter nports                = 8;                        // number of read ports
     parameter nstrms                = 64;                       // total number of streams
@@ -39,8 +39,8 @@ module rd_ctrl_top_tb;
         // dump waveform files
         // dumpvars = dumps ALL the variables of that module and all the variables in ALL lower level modules instantiated by this top module
         `ifdef VCD
-            $dumpfile("rd_ctrl_top_tb.vcd");
-            $dumpvars(0, rd_ctrl_top_tb);
+            $dumpfile("l1_ctrl_top_tb.vcd");
+            $dumpvars(0, l1_ctrl_top_tb);
         `endif
     end
 
@@ -100,7 +100,7 @@ module rd_ctrl_top_tb;
     );
 
     // DUT
-    rd_ctrl_top IDUT (
+    l1_ctrl_top IDUT (
         .clk                (clk),
         .reset              (reset),
 
@@ -179,4 +179,4 @@ module rd_ctrl_top_tb;
         i_rd_sid            <= 0;
     end
 
-endmodule // test_top
+endmodule // l1_ctrl_top_tb

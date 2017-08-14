@@ -87,7 +87,7 @@ module l2_ctrl_top #
 	genvar i;
 	generate
 		for(i=0; i<nstrms; i=i+1) begin : GEN_CONTROL
-			l2_stream_control # (
+			l2_stream_ptr # (
 				.l2_ncl			(l2_ncl)
 				) is0_stream_control (
 				.clk 			(clk),
@@ -113,7 +113,7 @@ module l2_ctrl_top #
 	generate
 		for(j=0; j<TILES; j=j+1) begin : GEN_MERGE
 			localparam  RRWAYS = 4;     // 4 inputs per RR MUX.
-			req_merge # (
+			l2_merge # (
 				.WAYS	  	(l2_nstrms),
 				.RRWAYS 	(RRWAYS),
 				.WIDTH 		(l2_ncl_width)
@@ -130,7 +130,7 @@ module l2_ctrl_top #
 			);
 
 			// Merge requests for OpenCAPI 3.0.
-			req_merge # (
+			l2_merge # (
 				.WAYS	  	(l2_nstrms),
 				.RRWAYS 	(RRWAYS),
 				.WIDTH 		(1)

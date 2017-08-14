@@ -1,4 +1,4 @@
-module rd_port#
+module l1_rd_port#
   (parameter nstrms=64,
    parameter sid_width=$clog2(nstrms),
    parameter nports=8,
@@ -25,7 +25,7 @@ module rd_port#
     // input - array with the current pointer of each stream.
     input [nstrms*ptr_width-1:0]  i_ptrs,
 
-    // output - which stream id is used for this read port? that signal is valid (one-hot). Used for transpose in rd_ctrl_top module.
+    // output - which stream id is used for this read port? that signal is valid (one-hot). Used for transpose in l1_ctrl_top module.
     output [nstrms-1:0] 	      o_req_v,
     input  [nstrms-1:0] 	      o_req_r,
 
@@ -111,4 +111,4 @@ module rd_port#
    assign o_addr_v = s1a_v[1];
    assign s1a_r[1] = o_addr_r;
 
-endmodule // rd_port
+endmodule // l1_rd_port

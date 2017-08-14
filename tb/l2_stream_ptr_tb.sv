@@ -1,4 +1,4 @@
-module l2_stream_control_tb;
+module l2_stream_ptr_tb;
 
     parameter l2_ncl                    = 256;
     parameter l2_ncl_width              = $clog2(l2_ncl);
@@ -32,8 +32,8 @@ module l2_stream_control_tb;
         // dump waveform files
         // dumpvars = dumps ALL the variables of that module and all the variables in ALL lower level modules instantiated by this top module
         `ifdef VCD
-            $dumpfile("l2_stream_control_tb.vcd");
-            $dumpvars(0, l2_stream_control_tb);
+            $dumpfile("l2_stream_ptr_tb.vcd");
+            $dumpvars(0, l2_stream_ptr_tb);
         `endif
     end
 
@@ -92,7 +92,7 @@ module l2_stream_control_tb;
     );
 
     // DUT
-    l2_stream_control IDUT (
+    l2_stream_ptr IDUT (
         .clk        (clk),
         .reset      (reset),
 
@@ -135,4 +135,4 @@ module l2_stream_control_tb;
         i_rd_v          <= 0;
     end
 
-endmodule // l2_stream_control_tb
+endmodule // l2_stream_ptr_tb

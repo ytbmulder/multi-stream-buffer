@@ -1,4 +1,4 @@
-module l2_stream_control #
+module l2_stream_ptr #
 (
 	parameter l2_ncl 			= 256,
 	parameter l2_ncl_width 		= $clog2(l2_ncl),
@@ -148,4 +148,4 @@ module l2_stream_control #
 	//assign i_rst_r = 1'b1; // TODO: has to be changed.
 	//assign s0_rst_r = 1'b1;
 
-endmodule // l2_stream_control
+endmodule // l2_stream_ptr

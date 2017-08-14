@@ -1,4 +1,4 @@
-module req_merge_tb;
+module l2_merge_tb;
     reg clk;
     reg reset;
 
@@ -29,8 +29,8 @@ module req_merge_tb;
         // dump waveform files
         // dumpvars = dumps ALL the variables of that module and all the variables in ALL lower level modules instantiated by this top module
         `ifdef VCD
-            $dumpfile("req_merge_tb.vcd");
-            $dumpvars(0, req_merge_tb);
+            $dumpfile("l2_merge_tb.vcd");
+            $dumpvars(0, l2_merge_tb);
         `endif
 
         // Initial reset state value of zero.
@@ -81,47 +81,15 @@ module req_merge_tb;
 
     end
 
-
-    // TODO: have input vlat for inputs.
-    // TODO: to avoid simulator conflicts (X's like in Vivado), declare input signal changes on falling edge of the clock.
-
-//    base_reset#(.t1(2),.t2(2)) ireset(.clk(clk),.reset(reset));
-
-//    wire req_v, req_r, rsp_v, rsp_r;
-//    base_areg#(.lbl(3'b111)) irsp_reg(.clk(clk),.reset(reset),.i_v(req_v),.i_r(req_r),.i_d(1'b0),.o_v(rsp_v),.o_r(rsp_r),.o_d());
-
-
-
-    //reg [7:0] rd_v;
-    //wire [7:0] rd_r;
-
-/*
-    reg [15:0] clreq_v;
-    always@(posedge clk)
-    begin
-        //rd_v <= $random;
-        //clreq_v <= $random;
-        #100;
-        clreq_v <= 16'b0000000000000001;
-        #4;
-        clreq_v <= 16'b0000000000000110;
-    end
-*/
-
-/*
-    localparam rstcnt_width=8;
-    wire [rstcnt_width-1:0] rst_cnt;
-    wire 		   rst_v = ~(|rst_cnt);
-    wire rst_r;
-    base_vlat_en#(.width(rstcnt_width)) irstcnt_lat(.clk(clk),.reset(reset),.din(rst_cnt+1'b1),.q(rst_cnt),.enable(~rst_v | rst_r));
-*/
-
+  // TODO: update this testbench with new IDUT and setup like in newer testbenches.
+  // TODO: have input vlat for inputs.
+  // TODO: to avoid simulator conflicts (X's like in Vivado), declare input signal changes on falling edge of the clock.
 
     // outputs
     wire [15:0] clreq_r;
     wire o_v;
     wire [3:0] clid_req; // output of interest.
-    req_merge IDUT (
+    l2_merge IDUT (
         .clk        (clk),
         .reset      (reset),
         .i_clreq_v  (clreq_v), // 16 bits
@@ -130,24 +98,5 @@ module req_merge_tb;
         .o_r        (1'b1), // always accept a new request
         .o_clid_req (clid_req) // 4 bits
     );
-
-/*   ptr_st idut(
-.clk(clk),
-.reset(reset),
-
-.i_rst_v(rst_v),
-.i_rst_r(rst_r),
-
-.i_rd_v(rd_v),
-.i_rd_r(rd_r),
-
-.o_clreq_v(req_v),
-.o_clreq_r(req_r),
-
-.i_clrsp_v(rsp_v),
-.i_clrsp_r(rsp_r)
-
-);
-*/
 
 endmodule // test_top

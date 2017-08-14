@@ -94,7 +94,7 @@ module apl_top #
         .i_rsp_sid      (i_rsp_sid)
     );
 
-    rd_ctrl_top is0_rd_ctrl_top (
+    l1_ctrl_top is0_rd_ctrl_top (
         .clk            (clk),
         .reset          (reset),
         .i_rst_v        (s0_rst_v),

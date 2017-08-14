@@ -1,4 +1,4 @@
-module ptr_st #
+module l1_stream_ptr #
 (
     parameter nports                    = 8,
     parameter ncl                       = 16, // number of cachelines per stream
@@ -159,4 +159,4 @@ module ptr_st #
     assign o_d = {s0_clid, s0_clofs};
     //assign i_rst_r = (s0_ncl == xncl);  // only accept a reset when we are in a clean state // TODO might want to keep track of end pointer for each stream as well. Or have a special condition. Option could be that L2 always responds, even when it is gibberish and read past the end of the valid address range. Have to think more about this case. First test what happens when you reset the stream, read some stuff and reset again for the next job.
 
-endmodule // ptr_st
+endmodule // l1_stream_ptr

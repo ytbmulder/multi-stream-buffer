@@ -3,7 +3,7 @@
 // TODO: another option is that each stream supplies its request and/or valid count and based on that, the MUX should have a priority which stream to service first. So if one stream has nearly no valid cache lines, you might want to fetch those sooner from opencapi. but if all have similar amount of valid lines but one stream has a lot of outstanding requests, that one should be serviced first.
 // TODO: rename this module to something with arr_mux_mc (mc = multi cycle)
 
-module req_merge #
+module l2_merge #
 (
 	parameter WAYS	 	= 16, // number of streams
 	parameter WIDTH		= 1, // input data width
@@ -150,4 +150,4 @@ module req_merge #
 	assign o_d = s1_merge_data[$clog2(RRWAYS)+WIDTH-1:$clog2(RRWAYS)];
 	assign o_sel = {s1_sel_enc, s1_merge_data[$clog2(RRWAYS)-1:0]}; // concatenate to obtain stream_id to be requested.
 
-endmodule // req_merge
+endmodule // l2_merge

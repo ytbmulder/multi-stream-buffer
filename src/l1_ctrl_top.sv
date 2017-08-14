@@ -1,4 +1,4 @@
-module rd_ctrl_top #
+module l1_ctrl_top #
 (
     parameter nports                = 8,                        // number of read ports
     parameter nstrms                = 64,                       // total number of streams
@@ -68,17 +68,17 @@ module rd_ctrl_top #
     // TODO: add agate for reset as done for L2 stream control.
 
     // COMPARE STREAM IDS AND CALCULATE BRAM ADDRESSES -------------------------------------------------------------------------------------------
-    wire [nstrms*ptr_width-1:0] 	s1_ptrs; // holds all current pointers. assigned in ptr_st module.
+    wire [nstrms*ptr_width-1:0] 	s1_ptrs; // holds all current pointers. assigned in l1_stream_ptr module.
     wire [nports*nstrms-1:0] 	    s1_rd_v, s1_rd_r;
 
     // Compare input stream ids.
-    // - send which streams are used (one-hot) to ptr_st modules.
+    // - send which streams are used (one-hot) to l1_stream_ptr modules.
     // - calculate address for each respective read port to interface with L1 BRAMs.
     genvar i;
     generate
         for(i=0; i<nports; i=i+1)
         begin : gen1
-            rd_port # (
+            l1_rd_port # (
                 .nstrms(nstrms),
                 .nports(nports),
                 .portid(i),
@@ -138,7 +138,7 @@ module rd_ctrl_top #
     base_transpose#(.w(1),.rs(nports),.cs(nstrms)) is1_xpose_v(.din(s1_rd_v),.dout(s1_rd_xpose_v)); //why are these different? because they go in opposite directions. look more into this.
     base_transpose#(.w(1),.rs(nstrms),.cs(nports)) is1_xpose_r(.din(s1_rd_xpose_r),.dout(s1_rd_r));
 
-    // Generate as many ptr_st modules as there are streams since each stream has to keep track of its own pointer.
+    // Generate as many l1_stream_ptr modules as there are streams since each stream has to keep track of its own pointer.
     wire [nstrms-1:0] s1_clreq_v; // Requests a cache line from L2. Used in the Round-Robin merge MUX.
     wire [nstrms-1:0] s1_clreq_r;
     wire [nstrms-1:0] s2_clreq_v; // Response from L2, the cache line has been received.
@@ -148,9 +148,9 @@ module rd_ctrl_top #
     generate
         for(j=0; j<nstrms; j=j+1)
         begin : gen2
-            ptr_st # (
+            l1_stream_ptr # (
                 .nports(nports),.ncl(ncl),.cl_size(cl_size)
-            ) iptr_st (
+            ) i_stream_ptr (
                 .clk(clk), .reset(reset),
                 .i_rst_v(s1_rst_v[j]),.i_rst_r(s1_rst_r[j]),        // Initialization interface.
                 .o_rst_v(o_rst_v[j]),.o_rst_r(o_rst_r[j]),
@@ -165,50 +165,6 @@ module rd_ctrl_top #
         end
     endgenerate
 
-/*
-    // MERGE L2 URAM REQUESTS INTO TILES * QUEUES ------------------------------------------------------------------------------------------------
-    // TODO: attach queues at the four ends. base_afifo
-    genvar l;
-    generate
-        for(l=0; l<TILES; l=l+1)
-        begin : GEN_REQ_MERGE
-            // Generate req_merge modules.
-            localparam  RRWAYS = 4;     // 4 inputs per RR MUX.
-            req_merge # (
-                .NSTRMS (nstrms),
-                .NCL    (ncl),
-                .RRWAYS (RRWAYS),
-                .NMUX   (ncl/RRWAYS)    // Number of RRMUX in first level.
-            ) ireq_merge (
-                .clk        (clk),
-                .reset      (reset),
-                .i_clreq_v  (s1_clreq_v[(l+1)*ncl-1:l*ncl]),
-                .i_clreq_r  (s1_clreq_r[(l+1)*ncl-1:l*ncl]),
-                .o_v        (o_tile_req_v[l]),
-                .o_r        (o_tile_req_r[l]),
-                .o_clid_req (o_tile_req_clid[(l+1)*clid_width-1:l*clid_width])
-            );
-
-            // Generate response demux logic.
-            wire [ncl-1:0] s1_rsp_clid_dec;
-            base_decode_le#(.enc_width(clid_width),.dec_width(ncl)) is1_rsp_gen_dec (
-                .din        (i_tile_rsp_clid[(l+1)*clid_width-1:l*clid_width]),
-                .dout       (s1_rsp_clid_dec),
-                .en         (1'b1)
-            );
-            base_ademux # (
-                .ways(ncl)
-            ) is1_rst_demux (
-                .i_v(i_tile_rsp_v[l]),
-                .i_r(i_tile_rsp_r[l]),
-                .o_v(s2_clreq_v[(l+1)*ncl-1:l*ncl]),
-                .o_r(s2_clreq_r[(l+1)*ncl-1:l*ncl]),
-                .sel(s1_rsp_clid_dec)
-            );
-        end
-    endgenerate
-*/
-
     // L2 REQUEST INTERFACE
     assign o_req_v = s1_clreq_v;
     assign s1_clreq_r= o_req_r;
@@ -217,4 +173,4 @@ module rd_ctrl_top #
     assign s2_clreq_v = i_rsp_v;
     assign i_rsp_r = s2_clreq_r;
 
-endmodule // rd_ctrl_top
+endmodule // l1_ctrl_top
