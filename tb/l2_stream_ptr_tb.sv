@@ -42,6 +42,9 @@ module l2_stream_ptr_tb;
     reg 						i_rst_v;
     wire 						i_rst_r;
 
+    wire 						o_rst_v;
+    reg 						o_rst_r;
+
     // L1 REQUEST INTERFACE
     reg 						i_rd_v;
     wire 						i_rd_r;
@@ -61,6 +64,7 @@ module l2_stream_ptr_tb;
 
     // after reg
     wire 						s0_rst_v;
+    wire            s0_rst_r;
     wire 						s0_rd_v;
     wire 						s0_addr_r;
     wire 						s0_req_r;
@@ -68,13 +72,13 @@ module l2_stream_ptr_tb;
 
     // REGISTER INPUTS
     base_delay # (
-        .width(5),
+        .width(6),
         .n(1)
     ) is0_input_delay (
         .clk (clk),
         .reset (reset),
-        .i_d ({ i_rst_v,  i_rd_v,  o_addr_r,  o_req_r,  i_rsp_v}),
-        .o_d ({s0_rst_v, s0_rd_v, s0_addr_r, s0_req_r, s0_rsp_v})
+        .i_d ({ i_rst_v,  o_rst_r,  i_rd_v,  o_addr_r,  o_req_r,  i_rsp_v}),
+        .o_d ({s0_rst_v, s0_rst_r, s0_rd_v, s0_addr_r, s0_req_r, s0_rsp_v})
     );
 
     // Loop back req and rsp for OpenCAPI 3.0.
@@ -99,6 +103,9 @@ module l2_stream_ptr_tb;
         .i_rst_v    (s0_rst_v),
         .i_rst_r    (i_rst_r),
 
+        .o_rst_v    (o_rst_v),
+        .o_rst_r    (s0_rst_r),
+
         .i_rd_v     (s0_rd_v),
         .i_rd_r     (i_rd_r),
 
@@ -116,6 +123,7 @@ module l2_stream_ptr_tb;
     // DRIVE INPUTS - best practise to change them on a negative edge.
     initial begin
         i_rst_v         <= 0;
+        o_rst_r         <= 0;
         i_rd_v          <= 0;
         o_addr_r        <= 1;
         o_req_r         <= 1;
@@ -123,6 +131,7 @@ module l2_stream_ptr_tb;
         #102;
 
         i_rst_v         <= 1;
+        o_rst_r         <= 1;
         #4;
 
         i_rst_v         <= 0;

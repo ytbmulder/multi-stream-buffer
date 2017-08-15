@@ -58,6 +58,7 @@ module l2_stream_ptr #
 	// Only allow reset if there are no outstanding requests.
 	//wire s0_rst_v, s0_rst_r;
 	wire s0_en_rst = s0_ncl_req_zero; // if there are no outstanding requests, it is safe to functionally reset the stream.
+  // TODO: add that you can only functinally reset if s0_ncl_req_zero & if this stream has ended.
 	base_agate # (
 		.width  (1)
 	) is0_reset_agate(

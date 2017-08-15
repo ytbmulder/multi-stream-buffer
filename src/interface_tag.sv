@@ -1,3 +1,8 @@
+// Notes regarding the simulation of this module:
+// - o_req_tag is undefined for two cycles after the reset has ended. This is because the initsm module within the resource manager is initializing the FIFO used in the resource manager. After two cycles, the first entry is present at the output.
+// - i_rsp_tag is undefined after the reset has ended as well. This is because in the testbench it is connected to o_req_tag through a delay element. This signal is the number of cycles latency the delay element adds longer undefined.
+// - o_rsp_sid and o_rsp_ptr are undefined because the SRAM is reading constantly. During these first couple of cycles, the SRAM is not yet initialized and therefore what is being read is undefined. TODO: fix this by not always enabling the read.
+
 module interface_tag #
 (
   // OpenCAPI 3.0 parameters
@@ -17,6 +22,7 @@ module interface_tag #
   input                     reset,
 
 /*
+  // TODO: maybe functional reset is not needed since this module is used by all streams.
   // FUNCTIONAL STREAM RESET INPUT INTERFACE
   input                     i_rst_v,
   output                    i_rst_r,
@@ -52,16 +58,17 @@ module interface_tag #
   input  [data_width-1:0]   i_rsp_data
 );
 
-  // request input interface
+  // parse request input interface
   wire s0_req_v = i_req_v;
   wire i_req_r = s0_req_r;
   wire [nstrms_width-1:0] s0_req_sid = i_req_sid;
   wire [addr_width-1:0] s0_req_ea = i_req_ea;
+
+  // Request input register.
   wire s1_req_v;
   wire s1_req_r;
   wire [nstrms_width-1:0] s1_req_sid;
   wire [addr_width-1:0] s1_req_ea;
-
   base_areg # (
     .width  (nstrms_width+addr_width),
     .lbl    (3'b110)
@@ -76,12 +83,25 @@ module interface_tag #
     .o_d    ({s1_req_sid, s1_req_ea})
   );
 
+  wire s1a_req_v, s1a_req_r;
+  wire ena = s1_res_o_v; //TODO: add to this enable signal; & ~ in reset state
+  base_agate # (.width()) is1_reqgate (
+    .i_v (s1_req_v),
+    .i_r (s1_req_r),
+    .o_v (s1a_req_v),
+    .o_r (s1a_req_r),
+    .en  (ena) // enable is high when the first resource from the res_mgr is valid. both the fifo within the res_mgr and the sram initsm will still be working while requests can come in.
+  );
+
   wire s1_res_o_v;
   wire s1_res_o_r;
   wire [tag_width-1:0] s1_res_o_tag;
   wire s2_res_i_v;
   wire s2_res_i_r;
   wire [tag_width-1:0] s2_res_i_tag = s2_rsp_tag;
+
+  // TODO: After reset goes low, the internal FIFO will be initialized using base_initsm. This module writes all the tags in the FIFO. A priority MUX is used to select either the initsm output or when a tag is given back, it is written in the FIFO. Currently, the resource manager does not wait until the initsm module is finished. Instead it gives out tags right away and continues initialization when it can (so when no tags are given back). Have to change this to wait until all tags have been initialized using a functional reset.
+  // Previously initialization is done by waiting for the SRAM initsm to be finished. Since it starts at the same time as the initsm within the res_mgr module, both are fully initialized before a request is accepted. Now it waits until the first valid resource is made valid and then the i_req_r signal goes high.
   base_res_mgr # (
     .width(tag_width)
     ) is1_res_mgr (
@@ -101,8 +121,8 @@ module interface_tag #
     .ni   (2),
     .no   (1)
     ) is1_req_cmb (
-    .i_v  ({s1_req_v, s1_res_o_v}),
-    .i_r  ({s1_req_r, s1_res_o_r}),
+    .i_v  ({s1a_req_v, s1_res_o_v}),
+    .i_r  ({s1a_req_r, s1_res_o_r}),
     .o_v  (s1_comb_v),
     .o_r  (s1_comb_r)
   );
@@ -162,6 +182,23 @@ module interface_tag #
     .o_en  (s2_sram_en)
   );
 
+  // SRAM memory initialization
+  wire qi_v, qi_r;
+  wire [tag_width-1:0] qi_d;
+  base_initsm#(.LOG_COUNT(tag_width)) ism (
+    .clk(clk),.reset(reset),.dout_r(qi_r),.dout_v(qi_v),.dout_d(qi_d));
+
+  // input data for primux
+  wire [tag_width+sram_width-1:0] initsm_d = {qi_d, {sram_width{1'b0}}}; //wa, wd
+  wire [tag_width+sram_width-1:0] res_d = {s1_res_o_tag, s1_sram_wd}; //wa, wd
+
+  wire s1_v;
+  wire s1_r = 1'b1;
+  wire act = s1_r & s1_v;
+  wire [tag_width+sram_width-1:0] s1_d;
+  base_primux#(.ways(2),.width(tag_width+sram_width)) imux (
+    .i_v({s1_comb_v,qi_v}),.i_r({s1_comb_r,qi_r}),.i_d({res_d, initsm_d}), .o_v(s1_v),.o_r(s1_r),.o_d(s1_d),.o_sel());
+
   // TODO: is it possible that a conflict occurs? (read & write from same address)
   // TODO: why is the read delay 0 cycles? shouldnt there be a delay there a well?
   wire [nstrms_width-1:0] s2_req_sid;
@@ -173,9 +210,9 @@ module interface_tag #
     .bypass     (0)
     ) is1_sram (
     .clk (clk),
-    .we  (s1_comb_act),
-    .wa  (s1_res_o_tag),
-    .wd  (s1_sram_wd),
+    .we  (act), //(s1_comb_act),
+    .wa  (s1_d[tag_width+sram_width-1:sram_width]), //(s1_res_o_tag),
+    .wd  (s1_d[sram_width-1:0]), //(s1_sram_wd),
     .re  (s2_sram_en), // TODO: enable only when it actually needs to be read.
     .ra  (s1_rsp_tag),
     .rd  ({s2_req_sid, s2_req_ptr})
