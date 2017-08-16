@@ -12,39 +12,34 @@ module interface_tag_tb;
   parameter l2_ncl          = 256;
   parameter l2_ncl_width    = $clog2(l2_ncl);
 
-    // SETUP
-    reg clk;
-    reg reset;
+  // SETUP
+  initial begin
+    // dump waveform files
+    // dumpvars = dumps ALL the variables of that module and all the variables in ALL lower level modules instantiated by this top module
+    `ifdef VCD
+      $dumpfile("interface_tag_tb.vcd");
+      $dumpvars(0, interface_tag_tb);
+    `endif
 
-    always
-    begin
-        clk <= 1'b1;
-        #(2.0);
-        clk <= 1'b0;
-        #(2.0);
-    end
+    #1500;
+    $finish;
+  end
 
-    initial
-    begin
-        clk = 0;
-        #1300;
-        $finish;
-    end
+  reg clk, reset;
+  initial begin
+    clk = 0;
+    reset = 1;
+    #100;
+    reset = 0;
+  end
 
-    initial begin
-        reset = 1;
-        #100;
-        reset = 0;
-    end
-
-    initial begin
-        // dump waveform files
-        // dumpvars = dumps ALL the variables of that module and all the variables in ALL lower level modules instantiated by this top module
-        `ifdef VCD
-            $dumpfile("interface_tag_tb.vcd");
-            $dumpvars(0, interface_tag_tb);
-        `endif
-    end
+  always
+  begin
+    clk <= 1'b1;
+    #(2.0);
+    clk <= 1'b0;
+    #(2.0);
+  end
 
     // SIGNAL DECLARATIONS
     // REQUEST INPUT INTERFACE

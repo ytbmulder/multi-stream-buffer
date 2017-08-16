@@ -1,4 +1,5 @@
 // TODO: change module to only have control and memories. Interface can be attached seperately to easily change between OpenCAPI 3.0 and AXI for example.
+// TODO: add reset out to AFU interface. Also on L1 control and AFU interface (8x read port & this reset interface decoded)
 
 module apl_top #
 (
