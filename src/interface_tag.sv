@@ -60,6 +60,7 @@ module interface_tag #
 
   // parse request input interface
   wire s0_req_v = i_req_v;
+  wire s0_req_r;
   wire i_req_r = s0_req_r;
   wire [nstrms_width-1:0] s0_req_sid = i_req_sid;
   wire [addr_width-1:0] s0_req_ea = i_req_ea;
@@ -134,6 +135,7 @@ module interface_tag #
 
   // respsonse input interface
   wire s0_rsp_v = i_rsp_v;
+  wire s0_rsp_r;
   wire i_rsp_r = s0_rsp_r;
   wire [tag_width-1:0]  s0_rsp_tag  = i_rsp_tag;
   wire [data_width-1:0] s0_rsp_data = i_rsp_data;
@@ -160,7 +162,7 @@ module interface_tag #
   // SRAM
   localparam sram_width = nstrms_width+l2_ncl_width;
   wire s1_comb_act = s1_comb_v & s1_comb_r;
-  wire [sram_width-1:0] s1_sram_wd = {s1_req_sid, s1_req_ea[l2_ncl_width-1:0]};
+  wire [sram_width-1:0] s1_sram_wd = {s1_req_sid, s1_req_ea[l2_ncl_width-1:0]}; // TODO: range of s1_req_ea is incorrect. See l2_stream_ptr for the correct range.
   wire s2_rsp_v;
   wire s2_rsp_r;
   wire [tag_width-1:0] s2_rsp_tag;

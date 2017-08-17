@@ -1,18 +1,19 @@
 [*]
 [*] GTKWave Analyzer v3.3.82 (w)1999-2017 BSI
-[*] Wed Aug 16 12:46:01 2017
+[*] Thu Aug 17 09:49:51 2017
 [*]
 [dumpfile] "/Users/ytbmulder/Google Drive/Thesis/Verilog/stream-cache/work/l2_stream_ptr_tb.vcd"
-[dumpfile_mtime] "Wed Aug 16 12:45:02 2017"
-[dumpfile_size] 56249
+[dumpfile_mtime] "Thu Aug 17 09:17:59 2017"
+[dumpfile_size] 166121
 [savefile] "/Users/ytbmulder/Google Drive/Thesis/Verilog/stream-cache/sim/l2_stream_ptr_tb.gtkw"
-[timestart] 80
+[timestart] 94
 [size] 1440 852
 [pos] -1 -1
-*-4.000000 116 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-4.000000 102 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] l2_stream_ptr_tb.
+[treeopen] l2_stream_ptr_tb.IDUT.
 [sst_width] 193
-[signals_width] 176
+[signals_width] 210
 [sst_expanded] 1
 [sst_vpaned_height] 257
 @28
@@ -23,11 +24,12 @@ l2_stream_ptr_tb.IDUT.reset
 @28
 l2_stream_ptr_tb.IDUT.i_rst_v
 l2_stream_ptr_tb.IDUT.i_rst_r
+@24
+l2_stream_ptr_tb.IDUT.i_rst_ea[63:0]
 @200
 -OUTPUT RESET
-@29
-l2_stream_ptr_tb.IDUT.o_rst_v
 @28
+l2_stream_ptr_tb.IDUT.o_rst_v
 l2_stream_ptr_tb.IDUT.o_rst_r
 @200
 -INPUT READ
@@ -46,6 +48,8 @@ l2_stream_ptr_tb.IDUT.o_addr_ptr[7:0]
 @28
 l2_stream_ptr_tb.IDUT.o_req_v
 l2_stream_ptr_tb.IDUT.o_req_r
+@24
+l2_stream_ptr_tb.IDUT.o_req_ea[63:0]
 @200
 -INPUT RSP
 @28

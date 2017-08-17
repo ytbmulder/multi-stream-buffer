@@ -129,7 +129,7 @@ module l1_stream_ptr #
     // increment decrement the number of valid cache lines in this stream.
     base_incdec # (
         .width(ncl_width),
-        .rstv(ncl)
+        .rstv(ncl) // TODO: changed this to 0 in l2_stream_ptr. Check if i_rd_r is also high here before a reset occurs.
     ) is0_ncl_incdec (
         .clk(clk),
         .reset(reset),

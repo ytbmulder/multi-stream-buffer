@@ -45,7 +45,7 @@ fi
 #TODO: add -Wall to display all warnings. timescale as well, but i dont use that.
 #TODO: use lxt format which is faster
 #TODO: for uram/bram sims, ifdef XILINX use their module, otherwise use behav model.
-iverilog -DVCD -o $WORK/$TOP.out -s $TOP $BASE/*.sv $SRC/*.sv $TB/*.sv
+iverilog -DVCD -Wall -o $WORK/$TOP.out -s $TOP $BASE/*.sv $SRC/*.sv $TB/*.sv
 vvp $WORK/$TOP.out
 mv $TOP.vcd $WORK/$TOP.vcd # VCD file is dumped in same directory as this script. Move it to the work folder.
 
