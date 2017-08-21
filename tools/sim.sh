@@ -11,8 +11,8 @@
 #export TOP=rd_ctrl_top_tb
 #export TOP=l2_merge_tb
 #export TOP=l2_ptr_st_tb
-export TOP=l2_stream_ptr_tb
-#export TOP=l2_ctrl_top_tb
+#export TOP=l2_stream_ptr_tb
+export TOP=l2_ctrl_top_tb
 #export TOP=apl_top_tb
 #export TOP=interface_tag_tb
 
@@ -21,7 +21,7 @@ set -euo pipefail
 
 #TODO: set the correct path (../sim/) for .gtkw files when directly saved instead of saved as.
 
-#TODO: test if Swith.pm is installed on host machine - invoking gtkwave from bash script needs to run perl script within gtkwave.app on OSX according to gtkwave manual. however this gave an error with perl since perl could not locate Switch.pm in @INC. run 'sudo cpan -f Switch' to install and then calling gtkwave works from command line.
+#TODO: test if Swith.pm is installed on host machine - invoking gtkwave from bash script needs to run perl script within gtkwave.app on macOS according to gtkwave manual. however this gave an error with perl since perl could not locate Switch.pm in @INC. run 'sudo cpan -f Switch' to install and then calling gtkwave works from command line.
 #TODO: test if iverilog and gtkwave are installed
 # - check which operating system is used.
 # - check if iverilog, vvp and gtkwave are installed

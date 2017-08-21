@@ -20,7 +20,7 @@ module apl_top #
     parameter l2_nstrms_width   = $clog2(l2_nstrms),
     parameter l2_ncl            = 256,
     parameter l2_ncl_width      = $clog2(l2_ncl),
-    parameter TILES             = nstrms/l2_nstrms
+    parameter channels             = nstrms/l2_nstrms
 )
 (
     input                               clk,
@@ -47,10 +47,10 @@ module apl_top #
     output [nports*ptr_width-1:0]       o_l1_addr_ptr,
 
     // L2 READ INTERFACE
-    output [TILES-1:0]					o_l2_addr_v,
-    input  [TILES-1:0]					o_l2_addr_r,
-    output [TILES*l2_nstrms_width-1:0]	o_l2_addr_sid,
-    output [TILES*l2_ncl_width-1:0] 	o_l2_addr_ptr,
+    output [channels-1:0]					o_l2_addr_v,
+    input  [channels-1:0]					o_l2_addr_r,
+    output [channels*l2_nstrms_width-1:0]	o_l2_addr_sid,
+    output [channels*l2_ncl_width-1:0] 	o_l2_addr_ptr,
 
     // OPENCAPI 3.0 REQUEST INTERFACE
     output 								o_req_v,
@@ -68,6 +68,27 @@ module apl_top #
 
     // TODO: OPENCAPI 3.0 INTERFACE
 );
+
+    // FUNCTIONAL RESET INTERFACE
+    /*
+    wire s1_rst_v, s1_rst_r;
+    wire [nstrms_width-1:0] s1_rst_sid;
+    base_areg # (.lbl(3'b110),.width(nstrms_width)) is1_rst_reg (
+      .clk    (clk),
+      .reset  (reset),
+      .i_v    (i_rst_v),
+      .i_r    (i_rst_r),
+      .i_d    (), //(i_rst_sid),
+      .o_v    (s1_rst_v),
+      .o_r    (s1_rst_r),
+      .o_d    () //(s1_rst_sid)
+    );
+
+    // Demux rst interface.
+    wire [nstrms-1:0] s1_rst_sid_dec, s1_rst_v_dec, s1_rst_r_dec;
+    base_decode_le#(.enc_width(nstrms_width),.dec_width(nstrms)) is1_rst_sid_dec(.din(s1_rst_sid),.dout(s1_rst_sid_dec),.en(1'b1));
+    base_ademux#(.ways(nstrms)) is1_rst_demux (.i_v(s1_rst_v),.i_r(s1_rst_r),.o_v(s1_rst_v_dec),.o_r(s1_rst_r_dec),.sel(s1_rst_sid_dec));
+    */
 
     // Wires
     wire [nstrms-1:0] s0_rst_v, s0_rst_r;

@@ -132,7 +132,7 @@ module l2_stream_ptr_tb;
     o_rst_r         <= 0;
     i_rd_v          <= 0;
     o_addr_r        <= 0;
-    o_req_r         <= 0;
+    o_req_r         <= 0; // TODO: remove this signal since it is looped back?
     i_rsp_v         <= 0;
     #102;
 

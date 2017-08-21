@@ -86,7 +86,7 @@ module interface_tag #
 
   wire s1a_req_v, s1a_req_r;
   wire ena = s1_res_o_v; //TODO: add to this enable signal; & ~ in reset state
-  base_agate # (.width()) is1_reqgate (
+  base_agate # (.width(1)) is1_reqgate (
     .i_v (s1_req_v),
     .i_r (s1_req_r),
     .o_v (s1a_req_v),

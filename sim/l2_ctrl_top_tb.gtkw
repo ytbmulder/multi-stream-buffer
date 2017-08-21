@@ -1,50 +1,93 @@
 [*]
-[*] GTKWave Analyzer v3.3.79 (w)1999-2017 BSI
-[*] Wed Jul 19 19:55:23 2017
+[*] GTKWave Analyzer v3.3.82 (w)1999-2017 BSI
+[*] Mon Aug 21 14:33:08 2017
 [*]
-[dumpfile] "/Users/ytbmulder/Google Drive/Thesis/Verilog/stream-cache/work/l2_ctrl_new_top_tb.vcd"
-[dumpfile_mtime] "Wed Jul 19 19:46:14 2017"
-[dumpfile_size] 1193704
-[savefile] "/Users/ytbmulder/Google Drive/Thesis/Verilog/stream-cache/sim/l2_ctrl_new_top_tb.gtkw"
-[timestart] 94
-[size] 1000 600
-[pos] -1 21
-*-2.000000 108 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
-[treeopen] l2_ctrl_new_top_tb.
-[treeopen] l2_ctrl_new_top_tb.IDUT.
-[treeopen] l2_ctrl_new_top_tb.IDUT.GEN_CONTROL[1].
-[treeopen] l2_ctrl_new_top_tb.IDUT.GEN_CONTROL[1].is0_stream_control.
-[treeopen] l2_ctrl_new_top_tb.IDUT.GEN_CONTROL[2].is0_stream_control.
-[sst_width] 241
-[signals_width] 167
+[dumpfile] "/Users/ytbmulder/Google Drive/Thesis/Verilog/stream-cache/work/l2_ctrl_top_tb.vcd"
+[dumpfile_mtime] "Mon Aug 21 14:30:00 2017"
+[dumpfile_size] 3384913
+[savefile] "/Users/ytbmulder/Google Drive/Thesis/Verilog/stream-cache/sim/l2_ctrl_top_tb.gtkw"
+[timestart] 128
+[size] 1440 852
+[pos] -1 -1
+*-2.000000 136 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] l2_ctrl_top_tb.
+[treeopen] l2_ctrl_top_tb.IDUT.
+[treeopen] l2_ctrl_top_tb.IDUT.GEN_MERGE[0].
+[treeopen] l2_ctrl_top_tb.IDUT.GEN_PTR[1].
+[sst_width] 208
+[signals_width] 309
 [sst_expanded] 1
-[sst_vpaned_height] 168
+[sst_vpaned_height] 257
 @28
-l2_ctrl_new_top_tb.IDUT.clk
-l2_ctrl_new_top_tb.IDUT.reset
-l2_ctrl_new_top_tb.IDUT.i_rst_v
-l2_ctrl_new_top_tb.IDUT.i_rst_r
-@24
-l2_ctrl_new_top_tb.IDUT.i_rst_sid[5:0]
-@28
-l2_ctrl_new_top_tb.IDUT.o_req_v
-l2_ctrl_new_top_tb.IDUT.o_req_r
-@24
-l2_ctrl_new_top_tb.IDUT.o_req_sid[5:0]
-l2_ctrl_new_top_tb.IDUT.GEN_CONTROL[1].is0_stream_control.is0_ncl_valid_incdec.o_cnt[0:8]
-l2_ctrl_new_top_tb.IDUT.GEN_CONTROL[1].is0_stream_control.is0_ncl_req_incdec.o_cnt[0:8]
-@28
-l2_ctrl_new_top_tb.IDUT.i_rsp_v
-l2_ctrl_new_top_tb.IDUT.i_rsp_r
-@24
-l2_ctrl_new_top_tb.IDUT.i_rsp_sid[5:0]
+l2_ctrl_top_tb.IDUT.clk
+l2_ctrl_top_tb.IDUT.reset
+@200
+-INPUT RESET
 @22
-l2_ctrl_new_top_tb.IDUT.o_rst_v[63:0]
-l2_ctrl_new_top_tb.IDUT.o_rst_r[63:0]
-l2_ctrl_new_top_tb.IDUT.o_addr_v[3:0]
-l2_ctrl_new_top_tb.IDUT.o_addr_sid[15:0]
-l2_ctrl_new_top_tb.IDUT.o_addr_ptr[31:0]
-l2_ctrl_new_top_tb.IDUT.i_rd_v[63:0]
-l2_ctrl_new_top_tb.IDUT.i_rd_r[63:0]
+l2_ctrl_top_tb.IDUT.i_rst_v[63:0]
+l2_ctrl_top_tb.IDUT.i_rst_r[63:0]
+@24
+l2_ctrl_top_tb.IDUT.i_rst_ea[63:0]
+@200
+-OUTPUT RESET
+@22
+l2_ctrl_top_tb.IDUT.o_rst_v[63:0]
+l2_ctrl_top_tb.IDUT.o_rst_r[63:0]
+@200
+-INPUT READ
+@22
+l2_ctrl_top_tb.IDUT.i_rd_v[63:0]
+l2_ctrl_top_tb.IDUT.i_rd_r[63:0]
+@200
+-OUTPUT ADDR
+@c00028
+l2_ctrl_top_tb.IDUT.o_addr_v[3:0]
+@28
+(0)l2_ctrl_top_tb.IDUT.o_addr_v[3:0]
+(1)l2_ctrl_top_tb.IDUT.o_addr_v[3:0]
+(2)l2_ctrl_top_tb.IDUT.o_addr_v[3:0]
+(3)l2_ctrl_top_tb.IDUT.o_addr_v[3:0]
+@1401200
+-group_end
+@28
+l2_ctrl_top_tb.IDUT.o_addr_r[3:0]
+@c00022
+l2_ctrl_top_tb.IDUT.o_addr_sid[15:0]
+@28
+(0)l2_ctrl_top_tb.IDUT.o_addr_sid[15:0]
+(1)l2_ctrl_top_tb.IDUT.o_addr_sid[15:0]
+(2)l2_ctrl_top_tb.IDUT.o_addr_sid[15:0]
+(3)l2_ctrl_top_tb.IDUT.o_addr_sid[15:0]
+(4)l2_ctrl_top_tb.IDUT.o_addr_sid[15:0]
+(5)l2_ctrl_top_tb.IDUT.o_addr_sid[15:0]
+(6)l2_ctrl_top_tb.IDUT.o_addr_sid[15:0]
+(7)l2_ctrl_top_tb.IDUT.o_addr_sid[15:0]
+(8)l2_ctrl_top_tb.IDUT.o_addr_sid[15:0]
+(9)l2_ctrl_top_tb.IDUT.o_addr_sid[15:0]
+(10)l2_ctrl_top_tb.IDUT.o_addr_sid[15:0]
+(11)l2_ctrl_top_tb.IDUT.o_addr_sid[15:0]
+(12)l2_ctrl_top_tb.IDUT.o_addr_sid[15:0]
+(13)l2_ctrl_top_tb.IDUT.o_addr_sid[15:0]
+(14)l2_ctrl_top_tb.IDUT.o_addr_sid[15:0]
+(15)l2_ctrl_top_tb.IDUT.o_addr_sid[15:0]
+@1401200
+-group_end
+@22
+l2_ctrl_top_tb.IDUT.o_addr_ptr[31:0]
+@200
+-OUTPUT REQ
+@28
+l2_ctrl_top_tb.IDUT.o_req_v
+l2_ctrl_top_tb.IDUT.o_req_r
+@24
+l2_ctrl_top_tb.IDUT.o_req_sid[5:0]
+l2_ctrl_top_tb.IDUT.o_req_ea[63:0]
+@200
+-INPUT RSP
+@28
+l2_ctrl_top_tb.IDUT.i_rsp_v
+l2_ctrl_top_tb.IDUT.i_rsp_r
+@24
+l2_ctrl_top_tb.IDUT.i_rsp_sid[5:0]
 [pattern_trace] 1
 [pattern_trace] 0

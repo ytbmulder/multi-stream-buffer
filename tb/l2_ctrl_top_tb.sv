@@ -1,16 +1,22 @@
 module l2_ctrl_top_tb;
 
-    parameter nstrms 			= 64;
-    parameter nstrms_width		= $clog2(nstrms);
-    parameter l2_ncl 			= 256;
-    parameter l2_ncl_width 		= $clog2(l2_ncl);
-    parameter l2_nstrms			= 16;
-    parameter l2_nstrms_width	= $clog2(l2_nstrms);
-    parameter TILES 			= nstrms/l2_nstrms;
+  // Host parameters
+  parameter addr_width                = 64;                 // Host address width in bits.
+  parameter cache_line                = 128;                // Host cache line size in bytes.
+  parameter cache_line_width          = $clog2(cache_line);
 
-    // SETUP
-    reg clk;
-    reg reset;
+  // Stream cache parameters
+  parameter nstrms                    = 64;
+  parameter nstrms_width              = $clog2(nstrms);
+  parameter l2_ncl                    = 256;                // Number of cache lines per stream in L2.
+  parameter l2_ncl_width              = $clog2(l2_ncl);
+  parameter l2_nstrms                 = 16;
+  parameter l2_nstrms_width           = $clog2(l2_nstrms);
+  parameter channels                  = nstrms/l2_nstrms;
+
+  // SETUP
+  reg clk;
+  reg reset;
 
     always
     begin
@@ -29,7 +35,7 @@ module l2_ctrl_top_tb;
 
     initial begin
         reset = 1;
-        #100;
+        #102;
         reset = 0;
     end
 
@@ -44,9 +50,9 @@ module l2_ctrl_top_tb;
 
     // SIGNAL DECLARATIONS
     // FUNCTIONAL STREAM RESET INPUT INTERFACE
-	reg 								i_rst_v;
-	wire 								i_rst_r;
-	reg  [nstrms_width-1:0]			    i_rst_sid;
+	reg [nstrms-1:0] 								i_rst_v;
+	wire [nstrms-1:0] 								i_rst_r;
+  reg [addr_width-1:0]        i_rst_ea;
 
     // FUNCTIONAL STREAM RESET OUTPUT INTERFACE
     wire [nstrms-1:0]				    o_rst_v;
@@ -57,15 +63,16 @@ module l2_ctrl_top_tb;
 	wire [nstrms-1:0]				    i_rd_r;
 
 	// L2 URAM READ INTERFACE
-	wire [TILES-1:0]					o_addr_v;
-	reg  [TILES-1:0]					o_addr_r;
-	wire [TILES*l2_nstrms_width-1:0]	o_addr_sid;
-	wire [TILES*l2_ncl_width-1:0] 	    o_addr_ptr;
+	wire [channels-1:0]					o_addr_v;
+	reg  [channels-1:0]					o_addr_r;
+	wire [channels*l2_nstrms_width-1:0]	o_addr_sid;
+	wire [channels*l2_ncl_width-1:0] 	    o_addr_ptr;
 
     // OPENCAPI 3.0 REQUEST INTERFACE
     wire 					            o_req_v;
     reg  				                o_req_r;
     wire [nstrms_width-1:0]	o_req_sid;
+    wire [addr_width-1:0] o_req_ea;
 
     // OPENCAPI 3.0 RESPONSE INTERFACE
     reg  				                i_rsp_v;
@@ -73,21 +80,21 @@ module l2_ctrl_top_tb;
     reg  [nstrms_width-1:0]	            i_rsp_sid;
 
     // after reg
-    wire 								s0_rst_v;
+    wire [nstrms-1:0] 								s0_rst_v;
+    wire [addr_width-1:0]       s0_rst_ea;
     wire  [nstrms-1:0]				    s0_rst_r;
-	wire  [nstrms_width-1:0]			s0_rst_sid;
 	wire  [nstrms-1:0]				    s0_rd_v;
-	wire  [TILES-1:0]					s0_addr_r;
+	wire  [channels-1:0]					s0_addr_r;
 
     // REGISTER INPUTS
     base_delay # (
-        .width(1+nstrms_width+nstrms+TILES+nstrms),
+        .width(nstrms+addr_width+nstrms+channels+nstrms),
         .n(1)
     ) is0_input_delay (
         .clk (clk),
         .reset (reset),
-        .i_d ({ i_rst_v,  o_rst_r,  i_rst_sid,  i_rd_v,  o_addr_r}), //,  o_req_r,  i_rsp_v}),
-        .o_d ({s0_rst_v, s0_rst_r, s0_rst_sid, s0_rd_v, s0_addr_r}) //, s0_req_r, s0_rsp_v})
+        .i_d ({ i_rst_v,  i_rst_ea,  o_rst_r,  i_rd_v,  o_addr_r}),
+        .o_d ({s0_rst_v, s0_rst_ea, s0_rst_r, s0_rd_v, s0_addr_r})
     );
 
     // Loop back req and rsp for OpenCAPI 3.0.
@@ -111,9 +118,9 @@ module l2_ctrl_top_tb;
         .clk        (clk),
         .reset      (reset),
 
-        .i_rst_v    (s0_rst_v),
+        .i_rst_v    (s0_rst_v), // TODO: use decoder to make writing tb easier
         .i_rst_r    (i_rst_r),
-        .i_rst_sid  (s0_rst_sid),
+        .i_rst_ea   (s0_rst_ea),
 
         .o_rst_v    (o_rst_v),
         .o_rst_r    (s0_rst_r),
@@ -129,46 +136,73 @@ module l2_ctrl_top_tb;
         .o_req_v    (s1_req_v),
         .o_req_r    (s1_req_r),
         .o_req_sid  (s1_req_sid),
+        .o_req_ea   (o_req_ea),
 
         .i_rsp_v    (s2_rsp_v),
         .i_rsp_r    (s2_rsp_r),
         .i_rsp_sid  (s2_rsp_sid)
     );
 
-    // DRIVE INPUTS - best practise to change them on a negative edge.
-    initial begin
-        i_rst_v         <= 0;
-        o_rst_r         <= 64'hFFFFFFFFFFFFFFFF;
-        i_rst_sid       <= 0;
-        i_rd_v          <= 0;
-        o_addr_r        <= 4'b1111;
-        #102;
+  // DRIVE INPUTS - best practise to change them on a negative edge.
+  initial begin
+    // Initially everything is set to zero.
+    i_rst_v         <= 64'h0000000000000000;
+    i_rst_ea        <= 0;
+    o_rst_r         <= 64'h0000000000000000;
+    i_rd_v          <= 64'h0000000000000000;
+    o_addr_r        <= 4'b0000;
+    #102;
 
-        i_rst_v         <= 1;
-        i_rst_sid       <= 1;
-        #4;
+    // Set interfaces to be ready.
+    o_rst_r         <= 64'hFFFFFFFFFFFFFFFF;
+    o_addr_r        <= 4'b1111;
+    #8;
 
-        i_rst_v         <= 1;
-        i_rst_sid       <= 17;
-        #4;
+    // Read from stream 1 (i_rd_v is one-hot signal).
+    // Nothing happens as expected since stream has not been reset.
+    i_rd_v          <= 2;
+    #8;
+    i_rd_v          <= 64'h0000000000000000;
 
-        i_rst_v         <= 1;
-        i_rst_sid       <= 2;
-        #4;
+    // Reset stream 1.
+    i_rst_v         <= 64'h0000000000000002;
+    i_rst_ea        <= 4;
+    #4;
 
-        i_rst_v         <= 1;
-        i_rst_sid       <= 1;
-        #4;
+    // Reset stream 17.
+    i_rst_v         <= 64'h0000000000020000;
+    i_rst_ea        <= 8;
+    #4;
 
-        i_rst_v         <= 0;
-        i_rst_sid       <= 0;
-        #100;
+    // Reset stream 2.
+    i_rst_v         <= 64'h0000000000000004;
+    i_rst_ea        <= 16;
+    #4;
 
-        i_rd_v          <= 2; // one-hot thus stream 1
-        #8;
+    // Reset stream 1 again. This reset is not accepted as expected.
+    i_rst_v         <= 64'h0000000000000002;
+    i_rst_ea        <= 32;
+    #4;
+    i_rst_v         <= 64'h0000000000000000;
+    i_rst_ea        <= 0;
+    #100;
 
-        // Terminate testbench.
-        i_rd_v          <= 0;
-    end
+    // Read from stream 1 (i_rd_v is one-hot signal).
+    i_rd_v          <= 2;
+    #8;
+
+    // Read from stream 2 (i_rd_v is one-hot signal).
+    i_rd_v          <= 4;
+    #8;
+    i_rd_v          <= 64'h0000000000000000;
+    #16;
+
+    // Terminate testbench.
+    i_rst_v         <= 64'h0000000000000000;
+    i_rst_ea        <= 0;
+    o_rst_r         <= 64'h0000000000000000;
+    i_rd_v          <= 64'h0000000000000000;
+    o_addr_r        <= 4'b0000;
+  end
 
 endmodule // l2_ctrl_new_top_tb

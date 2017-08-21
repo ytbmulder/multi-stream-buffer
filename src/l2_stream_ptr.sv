@@ -19,6 +19,7 @@ module l2_stream_ptr #
   // FUNCTIONAL STREAM RESET INPUT INTERFACE
   input                       i_rst_v,
   output                      i_rst_r,
+//  input                       i_rst_end,            // Begin is low and end is high.
   input  [addr_width-1:0]     i_rst_ea,
 
   // FUNCTIONAL STREAM RESET OUTPUT INTERFACE
@@ -144,7 +145,7 @@ module l2_stream_ptr #
   // If a functional reset is serviced or a request is made, the EA has to be updated.
   wire s0_ea_en = s0_rst_act | s0_req_act;
   wire [addr_width-1:0] s0_ea;
-  wire [addr_width-1:0] s0_ea_nxt = o_rst_v ? i_rst_ea : s0_ea + cache_line;
+  wire [addr_width-1:0] s0_ea_nxt = o_rst_v ? i_rst_ea : s0_ea + cache_line; // TODO: addition will always add cache_line. All bits smaller than cache_line do not have to be added.
   base_vlat_en # (.width(addr_width),.rstv(0)) is0_ea_lat (
     .clk      (clk),
     .reset    (reset),
