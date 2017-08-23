@@ -8,10 +8,10 @@ module l2_ctrl_top_tb;
   // Stream cache parameters
   parameter nstrms                    = 64;
   parameter nstrms_width              = $clog2(nstrms);
-  parameter l2_ncl                    = 256;                // Number of cache lines per stream in L2.
-  parameter l2_ncl_width              = $clog2(l2_ncl);
   parameter l2_nstrms                 = 16;
   parameter l2_nstrms_width           = $clog2(l2_nstrms);
+  parameter l2_ncl                    = 256;                // Number of cache lines per stream in L2.
+  parameter l2_ncl_width              = $clog2(l2_ncl);
   parameter channels                  = nstrms/l2_nstrms;
 
   // SETUP

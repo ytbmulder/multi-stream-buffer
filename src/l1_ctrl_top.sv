@@ -8,7 +8,7 @@ module l1_ctrl_top #
     parameter clofs_width           = $clog2(cl_size),          // number of bits needed to represent an offset within a cacheline
     parameter sid_width             = $clog2(nstrms),           // number of bits needed to represent the number of streams
     parameter ptr_width             = clid_width+clofs_width,   // number of bits needed to represent a stream pointer
-    parameter TILES                 = 4                         // 64 streams / 16 streams / BRAM tile = 4 blocks
+    parameter channels                 = 4                         // 64 streams / 16 streams / BRAM tile = 4 blocks
 )
 (
     input                           clk,
@@ -19,41 +19,41 @@ module l1_ctrl_top #
     // Start a new stream - used for stream initialization. If high, stored pointer is updated.
     // Read one stream base address per cycle. Repeat for nstreams to complete initialization.
     input                           i_rst_v,
-    output 			                i_rst_r,
-    input [sid_width-1:0] 	        i_rst_sid, // This is the first unread pointer.
+    output                       i_rst_r,
+    input [sid_width-1:0]           i_rst_sid, // This is the first unread pointer.
 */
 
     // FUNCTIONAL STREAM RESET OUTPUT INTERFACE
-    input  [nstrms-1:0]			    i_rst_v,
-    output [nstrms-1:0]				i_rst_r,
+    input  [nstrms-1:0]          i_rst_v,
+    output [nstrms-1:0]        i_rst_r,
 
     // FUNCTIONAL STREAM RESET OUTPUT INTERFACE
-    output [nstrms-1:0]			    o_rst_v,
-    input  [nstrms-1:0]				o_rst_r,
+    output [nstrms-1:0]          o_rst_v,
+    input  [nstrms-1:0]        o_rst_r,
 
     // AFU INTERFACE
     // read input - requested stream id from each read port.
-    input  [nports-1:0] 		    i_rd_v,
-    output [nports-1:0] 	        i_rd_r,
+    input  [nports-1:0]         i_rd_v,
+    output [nports-1:0]           i_rd_r,
     input  [nports*sid_width-1:0]   i_rd_sid,
 
     // L1 BRAM READ PORT INTERFACE
-    output [nports-1:0] 		    o_addr_v,
-    input  [nports-1:0] 	        o_addr_r,
+    output [nports-1:0]         o_addr_v,
+    input  [nports-1:0]           o_addr_r,
     output [nports*sid_width-1:0]   o_addr_sid, // stream id
     output [nports*ptr_width-1:0]   o_addr_ptr, // pointer
 
 /*
     // L2 REQUEST AND RESPONSE INTERFACE (TO URAM)
     // request
-    output [TILES-1:0]              o_tile_req_v,
-    input  [TILES-1:0]              o_tile_req_r,
-    output [clid_width*TILES-1:0]   o_tile_req_clid,
+    output [channels-1:0]              o_tile_req_v,
+    input  [channels-1:0]              o_tile_req_r,
+    output [clid_width*channels-1:0]   o_tile_req_clid,
 
     // response
-    input  [TILES-1:0]              i_tile_rsp_v,
-    output [TILES-1:0]              i_tile_rsp_r,
-    input  [clid_width*TILES-1:0]   i_tile_rsp_clid
+    input  [channels-1:0]              i_tile_rsp_v,
+    output [channels-1:0]              i_tile_rsp_r,
+    input  [clid_width*channels-1:0]   i_tile_rsp_clid
 */
 
     // L2 REQUEST INTERFACE
@@ -68,8 +68,8 @@ module l1_ctrl_top #
     // TODO: add agate for reset as done for L2 stream control.
 
     // COMPARE STREAM IDS AND CALCULATE BRAM ADDRESSES -------------------------------------------------------------------------------------------
-    wire [nstrms*ptr_width-1:0] 	s1_ptrs; // holds all current pointers. assigned in l1_stream_ptr module.
-    wire [nports*nstrms-1:0] 	    s1_rd_v, s1_rd_r;
+    wire [nstrms*ptr_width-1:0]   s1_ptrs; // holds all current pointers. assigned in l1_stream_ptr module.
+    wire [nports*nstrms-1:0]       s1_rd_v, s1_rd_r;
 
     // Compare input stream ids.
     // - send which streams are used (one-hot) to l1_stream_ptr modules.
@@ -104,8 +104,8 @@ module l1_ctrl_top #
 
     // PARSE INITIALIZATION INTERFACE DATA -------------------------------------------------------------------------------------------------------
     // Fix timing if needed.
-    wire [nstrms-1:0]			         s1_rst_v, s1_rst_r;
-    wire [sid_width-1:0] 	 s1_rst_sid;
+    wire [nstrms-1:0]               s1_rst_v, s1_rst_r;
+    wire [sid_width-1:0]    s1_rst_sid;
 
     genvar m;
     generate
@@ -118,7 +118,7 @@ module l1_ctrl_top #
             .reset      (reset),
             .i_v        (i_rst_v[m]),
             .i_r        (i_rst_r[m]),
-            .i_d        (), //(i_rst_sid),
+            .i_d        (1'b0), //(i_rst_sid),
             .o_v        (s1_rst_v[m]),
             .o_r        (s1_rst_r[m]),
             .o_d        () //(s1_rst_sid)
@@ -127,14 +127,14 @@ module l1_ctrl_top #
     endgenerate
 
     // Demux the initialization stream id from the initialization interface.
-//    wire [nstrms-1:0] 		 s1a_rst_v, s1a_rst_r, s1a_rst_sid_dec;
+//    wire [nstrms-1:0]      s1a_rst_v, s1a_rst_r, s1a_rst_sid_dec;
 //    base_decode_le#(.enc_width(sid_width),.dec_width(nstrms)) is1_rst_sid_dec(.din(s1_rst_sid),.dout(s1a_rst_sid_dec),.en(1'b1));
 //    base_ademux#(.ways(nstrms)) is1_rst_demux (.i_v(s1_rst_v),.i_r(s1_rst_r),.o_v(s1a_rst_v),.o_r(s1a_rst_r),.sel(s1a_rst_sid_dec));
 
     // UPDATE CURRENT STREAM POINTERS ------------------------------------------------------------------------------------------------------------
     // transpose the ready and valid signals for consumption by the streams
     // first each entry shows which stream is requested as one-hot. by transposing each entry shows how often each stream is requested.
-    wire [nports*nstrms-1:0] 	 s1_rd_xpose_v, s1_rd_xpose_r;
+    wire [nports*nstrms-1:0]    s1_rd_xpose_v, s1_rd_xpose_r;
     base_transpose#(.w(1),.rs(nports),.cs(nstrms)) is1_xpose_v(.din(s1_rd_v),.dout(s1_rd_xpose_v)); //why are these different? because they go in opposite directions. look more into this.
     base_transpose#(.w(1),.rs(nstrms),.cs(nports)) is1_xpose_r(.din(s1_rd_xpose_r),.dout(s1_rd_r));
 

@@ -7,38 +7,38 @@ module l1_rd_port#
 )
 (
     input                         clk,
-    input 			              reset,
+    input                     reset,
 
     // input - which stream id is requested.
-    input 			              i_rd_v,
-    output 			              i_rd_r,
+    input                     i_rd_v,
+    output                     i_rd_r,
     input [sid_width-1:0]         i_rd_sid,
 
     // output - parse input valid and stream id to output.
-//    output 			              o_cmp_sid_v,
-//    output [sid_width-1:0] 	      o_cmp_sid_d,
+//    output                     o_cmp_sid_v,
+//    output [sid_width-1:0]         o_cmp_sid_d,
 
     // input - array of sid for each read port.
-    input [nports-1:0] 		      i_cmp_sid_v,
+    input [nports-1:0]           i_cmp_sid_v,
     input [nports*sid_width-1:0]  i_cmp_sid_d,
 
     // input - array with the current pointer of each stream.
     input [nstrms*ptr_width-1:0]  i_ptrs,
 
     // output - which stream id is used for this read port? that signal is valid (one-hot). Used for transpose in l1_ctrl_top module.
-    output [nstrms-1:0] 	      o_req_v,
-    input  [nstrms-1:0] 	      o_req_r,
+    output [nstrms-1:0]         o_req_v,
+    input  [nstrms-1:0]         o_req_r,
 
     // output - calculated addr for this particular read port to interface with L1 BRAM.
-    output 			              o_addr_v,
-    input 			              o_addr_r,
-    output [ptr_width-1:0] 	      o_addr_ptr,
-    output [sid_width-1:0] 	      o_addr_sid
+    output                     o_addr_v,
+    input                     o_addr_r,
+    output [ptr_width-1:0]         o_addr_ptr,
+    output [sid_width-1:0]         o_addr_sid
     );
 
     // input register
-    wire 			         s1_v, s1_r;
-    wire [sid_width-1:0] 	 s1_sid;
+    wire                s1_v, s1_r;
+    wire [sid_width-1:0]    s1_sid;
     base_areg # (
         .lbl(3'b110), //010 fixes combine valids TODO: how does lbl work?
         // two latches (delay valid path) because that path is most often the longer path.
@@ -52,7 +52,7 @@ module l1_rd_port#
     );
 
     // delay i_cmp_sid_v and _d n=1 cycle
-    wire [nports-1:0] 		      s1_cmp_sid_v;
+    wire [nports-1:0]           s1_cmp_sid_v;
     wire [nports*sid_width-1:0]   s1_cmp_sid_d;
     base_delay # (.width(nports+nports*sid_width),.n(1)) is1_cmp_sid_delay (
         .clk (clk),
@@ -62,7 +62,7 @@ module l1_rd_port#
     );
 
    // split the control into two streams (sync inputs and outputs of this module)
-   wire [1:0] 			 s1a_v, s1a_r; // 0: to demux, 1: to output
+   wire [1:0]        s1a_v, s1a_r; // 0: to demux, 1: to output
    base_acombine#(.ni(1),.no(2)) is1a_cmb(.i_v(s1_v),.i_r(s1_r),.o_v(s1a_v),.o_r(s1a_r));
 
    // demux valid and ready signals of flow[0] based on the stream id.
@@ -85,6 +85,9 @@ module l1_rd_port#
 //   assign o_cmp_sid_v = s1_v;
 //   assign o_cmp_sid_d = s1_sid;
 
+// TODO: add agate to only accept a read if the respective stream has been reset.
+// TODO: before accepting a read from any of the 8 ports, check if the requested stream has been reset.
+
     // Generate which stream ids to compare for a particular read port.
     genvar i;
     generate
@@ -98,11 +101,11 @@ module l1_rd_port#
             end
             wire [inc_width-1:0] s1_ptr_inc;
             base_cenc#(.enc_width(inc_width),.dec_width(portid)) is1_inc_dec(.din(s1_hit),.dout(s1_ptr_inc)); // counter number of '1's in s1_hit array.
-            assign o_addr_ptr = s1_ptr + s1_ptr_inc;
+            assign o_addr_ptr = s1_cmp_sid_v[portid] ? s1_ptr + s1_ptr_inc : {ptr_width{1'b0}}; // TODO: use if statement to save power
         end
         else
         begin
-            assign o_addr_ptr = s1_ptr;
+            assign o_addr_ptr = s1_ptr; // TODO: use if statement to save power
         end
         // else: !if(portid>0)
     endgenerate

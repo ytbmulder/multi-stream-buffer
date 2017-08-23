@@ -1,22 +1,28 @@
 module apl_top_tb;
 
-    parameter nstrms 			= 64;
-    parameter nstrms_width      = $clog2(nstrms); // TODO: duplicate of sid_width
-    parameter nports            = 8;                        // number of read ports
+  // Host parameters
+  parameter addr_width                  = 64;                 // Host address width in bits.
+  parameter cache_line                  = 128;                // Host cache line size in bytes.
+  parameter cache_line_width            = $clog2(cache_line);
 
-    // TODO: rename to l1_xxx
-    parameter ncl               = 16;                       // number of cachelines per stream
-    parameter clid_width        = $clog2(ncl);              // number of bits needed to identify a cache line
-    parameter cl_size           = 8;                        // number of reads per cacheline - must be at least as big as the number of read ports
-    parameter clofs_width       = $clog2(cl_size);          // number of bits needed to represent an offset within a cacheline
-    parameter sid_width         = $clog2(nstrms);           // number of bits needed to represent the number of streams
-    parameter ptr_width         = clid_width+clofs_width;   // number of bits needed to represent a stream pointer
+  // Stream cache parameters
+  parameter nstrms                      = 64;
+  parameter nstrms_width                = $clog2(nstrms);
+  parameter nports                      = 8;                  // Number of L1 read ports.
+  parameter cl_size                     = 8;                  // number of reads per cacheline - must be at least as big as the number of read ports
 
-    parameter l2_nstrms			= 16;
-    parameter l2_nstrms_width	= $clog2(l2_nstrms);
-    parameter l2_ncl 			= 256;
-    parameter l2_ncl_width 		= $clog2(l2_ncl);
-    parameter TILES 			= nstrms/l2_nstrms;
+  // L1 parameters
+  parameter l1_ncl                      = 16;                 // Number of L1 cache lines per stream.
+  parameter l1_ncl_width                = $clog2(l1_ncl);
+  parameter clofs_width                 = $clog2(cl_size); // number of bits needed to represent an offset within a cacheline
+  parameter ptr_width                   = l1_ncl_width+clofs_width; // number of bits needed to represent a stream pointer
+
+  // L2 parameters
+  parameter l2_nstrms                   = 16;
+  parameter l2_nstrms_width             = $clog2(l2_nstrms);
+  parameter l2_ncl                      = 256;                // Number of L2 cache lines per stream.
+  parameter l2_ncl_width                = $clog2(l2_ncl);
+  parameter channels                    = nstrms/l2_nstrms;    // TODO: move to stream cache parameters
 
     // SETUP
     reg clk;
@@ -57,6 +63,7 @@ module apl_top_tb;
     reg 								i_rst_v;
     wire 								i_rst_r;
     reg  [nstrms_width-1:0]			i_rst_sid;
+    reg  [addr_width-1:0]               i_rst_ea;
 
     // FUNCTIONAL STREAM RESET wire INTERFACE
     wire [nstrms-1:0]					o_rst_v;
@@ -65,24 +72,25 @@ module apl_top_tb;
     // AFU READ INTERFACE
     reg  [nports-1:0] 		        i_rd_v;
     wire [nports-1:0] 	            i_rd_r;
-    reg  [nports*sid_width-1:0]       i_rd_sid;
+    reg  [nports*nstrms_width-1:0]       i_rd_sid;
 
     // L1 READ INTERFACE
     wire [nports-1:0] 		        o_l1_addr_v;
     reg  [nports-1:0] 	            o_l1_addr_r;
-    wire [nports*sid_width-1:0]       o_l1_addr_sid;
+    wire [nports*nstrms_width-1:0]       o_l1_addr_sid;
     wire [nports*ptr_width-1:0]       o_l1_addr_ptr;
 
     // L2 READ INTERFACE
-    wire [TILES-1:0]					o_l2_addr_v;
-    reg  [TILES-1:0]					o_l2_addr_r;
-    wire [TILES*l2_nstrms_width-1:0]	o_l2_addr_sid;
-    wire [TILES*l2_ncl_width-1:0] 	o_l2_addr_ptr;
+    wire [channels-1:0]					o_l2_addr_v;
+    reg  [channels-1:0]					o_l2_addr_r;
+    wire [channels*l2_nstrms_width-1:0]	o_l2_addr_sid;
+    wire [channels*l2_ncl_width-1:0] 	o_l2_addr_ptr;
 
     // OPENCAPI 3.0 REQUEST INTERFACE
     wire 								o_req_v;
     reg  								o_req_r;
     wire [nstrms_width-1:0]			o_req_sid;
+    wire [addr_width-1:0] o_req_ea;
 
     // OPENCAPI 3.0 RESPONSE INTERFACE
     reg  								i_rsp_v;
@@ -96,25 +104,26 @@ module apl_top_tb;
     // after reg
     wire s0_rst_v;
     wire [nstrms_width-1:0] s0_rst_sid;
+    wire [addr_width-1:0] s0_rst_ea;
     wire [nstrms-1:0]	s0_rst_r;
     wire [nports-1:0] s0_rd_v;
-    wire [nports*sid_width-1:0] s0_rd_sid;
+    wire [nports*nstrms_width-1:0] s0_rd_sid;
     wire [nports-1:0] s0_l1_addr_r;
-    wire [TILES-1:0]	s0_l2_addr_r;
+    wire [channels-1:0]	s0_l2_addr_r;
     wire s0_req_r;
     wire s0_rsp_v;
     wire [nstrms_width-1:0]	s0_rsp_sid;
 //    wire [nstrms-1:0] s0_rsp_uram_v;
 
-    // REGISTER regS
+    // REGISTERS
     base_delay # (
-        .width(1+nstrms_width+nstrms+nports+nports*sid_width+nports+TILES+1+1+nstrms_width),//+nstrms),
+        .width(1+nstrms_width+addr_width+nstrms+nports+nports*nstrms_width+nports+channels+1+1+nstrms_width),
         .n(1)
     ) is0_reg_delay (
         .clk (clk),
         .reset (reset),
-        .i_d ({i_rst_v, i_rst_sid, o_rst_r, i_rd_v, i_rd_sid, o_l1_addr_r, o_l2_addr_r, o_req_r, i_rsp_v, i_rsp_sid}), //, i_rsp_uram_v}),
-        .o_d ({s0_rst_v, s0_rst_sid, s0_rst_r, s0_rd_v, s0_rd_sid, s0_l1_addr_r, s0_l2_addr_r, s0_req_r, s0_rsp_v, s0_rsp_sid}) //, s0_rsp_uram_v})
+        .i_d ({ i_rst_v,  i_rst_sid,  i_rst_ea,  o_rst_r,  i_rd_v,  i_rd_sid,  o_l1_addr_r,  o_l2_addr_r,  o_req_r,  i_rsp_v, i_rsp_sid}),
+        .o_d ({s0_rst_v, s0_rst_sid, s0_rst_ea, s0_rst_r, s0_rd_v, s0_rd_sid, s0_l1_addr_r, s0_l2_addr_r, s0_req_r, s0_rsp_v, s0_rsp_sid})
     );
 
     // Loop back req and rsp for OpenCAPI 3.0.
@@ -136,7 +145,7 @@ module apl_top_tb;
     wire [nstrms-1:0] s5_rsp_uram_v;
     genvar k;
     generate
-        for(k=0; k<TILES; k=k+1) begin : GEN_DINGES
+        for(k=0; k<channels; k=k+1) begin : GEN_DINGES
             wire [l2_nstrms-1:0] s1_rsp_sid_dec;
             base_decode_le#(.enc_width(l2_nstrms_width),.dec_width(l2_nstrms)) is1_rsp_dec (
                 .din        (o_l2_addr_sid[(k+1)*l2_nstrms_width-1:k*l2_nstrms_width]),
@@ -170,6 +179,7 @@ module apl_top_tb;
         .i_rst_v    (s0_rst_v),
         .i_rst_r    (i_rst_r),
         .i_rst_sid  (s0_rst_sid),
+        .i_rst_ea   (s0_rst_ea),
 
         .o_rst_v    (o_rst_v),
         .o_rst_r    (s0_rst_r),
@@ -191,6 +201,7 @@ module apl_top_tb;
         .o_req_v    (s1_req_v),
         .o_req_r    (s1_req_r),
         .o_req_sid  (s1_req_sid),
+        .o_req_ea   (o_req_ea),
 
         .i_rsp_v    (s2_rsp_v),
         .i_rsp_r    (s2_rsp_r),
@@ -200,38 +211,87 @@ module apl_top_tb;
         .i_rsp_uram_r (i_rsp_uram_r)
     );
 
-    // DRIVE regS - best practise to change them on a negative edge.
-    initial begin
-        i_rst_v         <= 0; // TODO: i_rst_r is undefined before 100 s. Fix that.
-        i_rst_sid       <= 0;
-        o_rst_r         <= 64'hFFFFFFFFFFFFFFFF;
-        i_rd_v          <= 8'b00000000;
-        i_rd_sid        <= 48'h000000000000;
-        o_l1_addr_r     <= 8'b11111111;
-        o_l2_addr_r     <= 4'b1111;
-        //o_req_r         <= 1;
-        //i_rsp_v         <= 1;
-        //i_rsp_sid       <= 4'b1111;
-        //i_rsp_uram_v    <= ;
-        #102;
+  // DRIVE REGS - best practise to change them on a negative edge.
+  initial begin
+    i_rst_v       <= 0;
+    i_rst_sid     <= 0;
+    i_rst_ea      <= 0;
+    o_rst_r       <= 0;
+    i_rd_v        <= 0;
+    i_rd_sid      <= 0;
+    o_l1_addr_r   <= 0;
+    o_l2_addr_r   <= 0;
+    //o_req_r       <= 0;
+    //i_rsp_v       <= 0;
+    //i_rsp_sid     <= 0;
+    #102;
 
-        i_rst_v         <= 1;
-        i_rst_sid       <= 1;
-        #4;
+    // Set interfaces to be ready.
+    o_rst_r       <= {nstrms{1'b1}};
+    o_l1_addr_r   <= {nports{1'b1}};
+    o_l2_addr_r   <= {channels{1'b1}};
+    #8;
 
-        i_rst_v         <= 0;
-        i_rst_sid       <= 0;
-        #100;
+    // Reset stream 1 with EA = 16.
+    i_rst_v       <= 1;
+    i_rst_sid     <= 1;
+    i_rst_ea      <= 16;
+    #4;
+    i_rst_v       <= 0;
+    i_rst_sid     <= 0;
+    i_rst_ea      <= 0;
+    #140;
 
-//        i_rd_v          <= 8'b00000001;
-//        i_rd_sid        <= 48'h000000000001;
-//        #12;
+    // Read after L1 has fully reset.
+    // TODO: tests;
+    // - multiple concurrent reads
+    // - read while L1 is not fully reset
+    // - read before a stream has been reset
 
-        // TODO: test what happens if L1 keeps reading from L2. Will the number of outstanding requests (counter) surpaass 256?
+    // Read stream 1 from port 0.
+    i_rd_v        <= 8'b00000001;
+    i_rd_sid      <= 48'h000000000001;
+    #8;
+    i_rd_v        <= 8'b00000000;
+    i_rd_sid      <= 48'h000000000000;
+    #12;
 
-        // Terminate testbench.
-        i_rd_v          <= 0;
-        i_rd_sid        <= 48'h000000000000;
-    end
+    // Read stream 1 from port 0 and 1.
+    i_rd_v        <= 8'b00000011;
+    i_rd_sid      <= 48'h000000000041;
+    #8;
+    i_rd_v        <= 8'b00000000;
+    i_rd_sid      <= 48'h000000000000;
+    #12;
+
+    // Read stream 1 from port 0 and 2.
+    i_rd_v        <= 8'b00000101;
+    i_rd_sid      <= 48'h000000000042; // NOTE: should be 41
+    #8;
+    i_rd_v        <= 8'b00000000;
+    i_rd_sid      <= 48'h000000000000;
+    #500;
+
+
+
+
+
+
+
+    // TODO: test what happens if L1 keeps reading from L2. Will the number of outstanding requests (counter) surpaass 256?
+
+    // Terminate testbench.
+    i_rst_v       <= 0;
+    i_rst_sid     <= 0;
+    i_rst_ea      <= 0;
+    o_rst_r       <= 0;
+    i_rd_v        <= 0;
+    i_rd_sid      <= 0;
+    o_l1_addr_r   <= 0;
+    o_l2_addr_r   <= 0;
+    //o_req_r       <= 0;
+    //i_rsp_v       <= 0;
+    //i_rsp_sid     <= 0;
+  end
 
 endmodule // apl_top_tb

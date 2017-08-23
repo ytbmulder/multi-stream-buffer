@@ -1,3 +1,5 @@
+// TODO: add agate to not allow any reads before functional reset has occured.
+
 module l1_stream_ptr #
 (
     parameter nports                    = 8,
