@@ -47,6 +47,7 @@ module l1_stream_ptr #
     wire [clofs_width-1:0]  s0_clofs;   // what offset are we currently reading from
 
     // only accept input requests when we have enough cachelines in the cache, and we are not resetting
+    // TODO: take end of stream into account as well and that min_cl = 2. Thus what to do when s0_ncl = 1 and that is the last valid cache line of the stream? Maybe OR (s0_ncl == 1 & end of stream == true)
     wire s0_en = (s0_ncl >= min_cl) & ~i_rst_v; // TODO: change to o_rst_v
 
     wire [nports-1:0]   s0_v;

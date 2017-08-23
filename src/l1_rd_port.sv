@@ -1,3 +1,5 @@
+// TODO: before accepting a read from any of the 8 ports, check if the requested stream has been reset using agate module.
+
 module l1_rd_port#
   (parameter nstrms=64,
    parameter sid_width=$clog2(nstrms),
@@ -13,10 +15,6 @@ module l1_rd_port#
     input                     i_rd_v,
     output                     i_rd_r,
     input [sid_width-1:0]         i_rd_sid,
-
-    // output - parse input valid and stream id to output.
-//    output                     o_cmp_sid_v,
-//    output [sid_width-1:0]         o_cmp_sid_d,
 
     // input - array of sid for each read port.
     input [nports-1:0]           i_cmp_sid_v,
@@ -81,13 +79,6 @@ module l1_rd_port#
         .sel(s1_sid)
     );
 
-    // parse input valid and stream id to output.
-//   assign o_cmp_sid_v = s1_v;
-//   assign o_cmp_sid_d = s1_sid;
-
-// TODO: add agate to only accept a read if the respective stream has been reset.
-// TODO: before accepting a read from any of the 8 ports, check if the requested stream has been reset.
-
     // Generate which stream ids to compare for a particular read port.
     genvar i;
     generate
@@ -101,11 +92,11 @@ module l1_rd_port#
             end
             wire [inc_width-1:0] s1_ptr_inc;
             base_cenc#(.enc_width(inc_width),.dec_width(portid)) is1_inc_dec(.din(s1_hit),.dout(s1_ptr_inc)); // counter number of '1's in s1_hit array.
-            assign o_addr_ptr = s1_cmp_sid_v[portid] ? s1_ptr + s1_ptr_inc : {ptr_width{1'b0}}; // TODO: use if statement to save power
+            assign o_addr_ptr = s1_cmp_sid_v[portid] ? s1_ptr + s1_ptr_inc : {ptr_width{1'b0}}; // use if statement to save power
         end
         else
         begin
-            assign o_addr_ptr = s1_ptr; // TODO: use if statement to save power
+            assign o_addr_ptr = s1_cmp_sid_v[portid] ? s1_ptr : {ptr_width{1'b0}}; // use if statement to save power
         end
         // else: !if(portid>0)
     endgenerate

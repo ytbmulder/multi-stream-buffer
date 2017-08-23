@@ -45,10 +45,12 @@ module l2_stream_ptr_tb;
   // FUNCTIONAL STREAM RESET INTERFACE
   reg                     i_rst_v;
   wire                    i_rst_r;
-  reg  [addr_width-1:0]   i_rst_ea;
+  reg  [addr_width-1:0]   i_rst_ea_b;
+  reg  [addr_width-1:0]   i_rst_ea_e;
 
   wire                    o_rst_v;
   reg                     o_rst_r;
+  wire                    o_rst_end;
 
   // L1 REQUEST INTERFACE
   reg                     i_rd_v;
@@ -69,7 +71,8 @@ module l2_stream_ptr_tb;
 
   // after reg
   wire                    s0_rst_v;
-  wire [addr_width-1:0]   s0_rst_ea;
+  wire [addr_width-1:0]   s0_rst_ea_b;
+  wire [addr_width-1:0]   s0_rst_ea_e;
   wire                    s0_rst_r;
   wire                    s0_rd_v;
   wire                    s0_addr_r;
@@ -78,13 +81,13 @@ module l2_stream_ptr_tb;
 
   // REGISTER INPUTS
   base_delay # (
-    .width(6+addr_width),
+    .width(6+2*addr_width),
     .n(1)
   ) is0_input_delay (
     .clk (clk),
     .reset (reset),
-    .i_d ({ i_rst_v,  i_rst_ea,  o_rst_r,  i_rd_v,  o_addr_r,  o_req_r,  i_rsp_v}),
-    .o_d ({s0_rst_v, s0_rst_ea, s0_rst_r, s0_rd_v, s0_addr_r, s0_req_r, s0_rsp_v})
+    .i_d ({ i_rst_v,  i_rst_ea_b,  i_rst_ea_e,  o_rst_r,  i_rd_v,  o_addr_r,  o_req_r,  i_rsp_v}),
+    .o_d ({s0_rst_v, s0_rst_ea_b, s0_rst_ea_e, s0_rst_r, s0_rd_v, s0_addr_r, s0_req_r, s0_rsp_v})
   );
 
   // Loop back req and rsp for OpenCAPI 3.0.
@@ -105,10 +108,12 @@ module l2_stream_ptr_tb;
 
     .i_rst_v    (s0_rst_v),
     .i_rst_r    (i_rst_r),
-    .i_rst_ea   (s0_rst_ea),
+    .i_rst_ea_b (s0_rst_ea_b),
+    .i_rst_ea_e (s0_rst_ea_e),
 
     .o_rst_v    (o_rst_v),
     .o_rst_r    (s0_rst_r),
+    .o_rst_end  (o_rst_end),
 
     .i_rd_v     (s0_rd_v),
     .i_rd_r     (i_rd_r),
@@ -128,12 +133,11 @@ module l2_stream_ptr_tb;
   initial begin
     // Initially everything is set to zero.
     i_rst_v         <= 0;
-    i_rst_ea        <= 0;
+    i_rst_ea_b      <= 0;
+    i_rst_ea_e      <= 0;
     o_rst_r         <= 0;
     i_rd_v          <= 0;
     o_addr_r        <= 0;
-    o_req_r         <= 0; // TODO: remove this signal since it is looped back?
-    i_rsp_v         <= 0;
     #102;
 
     // Set interfaces to be ready.
@@ -144,11 +148,13 @@ module l2_stream_ptr_tb;
 
     // Functionally reset this stream.
     i_rst_v         <= 1;
-    i_rst_ea        <= 128*256; // 32768 mod 128 = 0
+    i_rst_ea_b      <= 128*256; // 32768 mod 128 = 0
+    i_rst_ea_e      <= 2*128*256; // Test with less than number of cache lines. Shows that no more requests will be made.
     #4;
     i_rst_v         <= 0;
-    i_rst_ea        <= 0;
-    #8;
+    i_rst_ea_b      <= 0;
+    i_rst_ea_e      <= 0;
+    #16;
 
     // Read from this stream.
     i_rd_v          <= 1;
@@ -161,36 +167,39 @@ module l2_stream_ptr_tb;
     #4;
 
     // Test second functional reset. Nothing happens as expected because there are outstanding requests.
-    i_rst_v   <= 1;
-    i_rst_ea  <= 128*3;
+    i_rst_v         <= 1;
+    i_rst_ea_b      <= 128*3;
+    i_rst_ea_e      <= 128*300;
     #4;
-    i_rst_v   <= 0;
-    i_rst_ea  <= 0;
+    i_rst_v         <= 0;
+    i_rst_ea_b      <= 0;
+    i_rst_ea_e      <= 0;
     #4;
 
     // Test third functional reset. Happens as expected since there are no outstanding requests.
     #1100;
-    i_rst_v   <= 1;
-    i_rst_ea  <= 128*4;
+    i_rst_v         <= 1;
+    i_rst_ea_b      <= 128*4;
+    i_rst_ea_e      <= 2*128*256;
     #4;
-    i_rst_v   <= 0;
-    i_rst_ea  <= 0;
+    i_rst_v         <= 0;
+    i_rst_ea_b      <= 0;
+    i_rst_ea_e      <= 0;
     #16;
 
     // Read from this stream.
-    i_rd_v    <= 1;
+    i_rd_v          <= 1;
     #4;
-    i_rd_v    <= 0;
+    i_rd_v          <= 0;
     #8;
 
     // Terminate testbench.
     i_rst_v         <= 0;
-    i_rst_ea        <= 0;
+    i_rst_ea_b      <= 0;
+    i_rst_ea_e      <= 0;
     o_rst_r         <= 0;
     i_rd_v          <= 0;
     o_addr_r        <= 0;
-    o_req_r         <= 0;
-    i_rsp_v         <= 0;
   end
 
 endmodule // l2_stream_ptr_tb

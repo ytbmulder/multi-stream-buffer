@@ -8,10 +8,10 @@
 # - gtkwave 3.3.82
 
 # Define top level module name.
-export TOP=l1_ctrl_top_tb
+#export TOP=l1_ctrl_top_tb
 #export TOP=l2_merge_tb
 #export TOP=l2_ptr_st_tb
-#export TOP=l2_stream_ptr_tb
+export TOP=l2_stream_ptr_tb
 #export TOP=l2_ctrl_top_tb
 #export TOP=apl_top_tb
 #export TOP=interface_tag_tb
@@ -41,6 +41,9 @@ export WORK=../work
 if [ ! -d "$WORK" ]; then
 	mkdir $WORK
 fi
+
+# Echo the top level entity.
+echo "TOP = $TOP"
 
 #TODO: add -Wall to display all warnings. timescale as well, but i dont use that.
 #TODO: use lxt format which is faster
