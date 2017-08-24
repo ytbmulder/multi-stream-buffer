@@ -47,7 +47,7 @@ module l2_stream_ptr #
   // FUNCTIONAL RESET INTERFACE
   // Only allow functional reset if there are no outstanding requests & when the stream has ended & when there are no more valid lines (everything has been read).
   // Functionally resetting a stream has priority over reading a stream.
-  wire s0_en_rst = s0_ncl_req_zero & o_rst_end & s0_ncl_valid_zero;
+  wire s0_en_rst = s0_ncl_req_zero & o_rst_end & s0_ncl_valid_zero; // TODO: maybe o_rst_end is obsolete because it is implied by the other two. First the stream will end and then no reqs nor valid lines will be present.
   base_agate # (.width(1)) is0_reset_agate (
     .i_v      (i_rst_v),
     .i_r      (i_rst_r),

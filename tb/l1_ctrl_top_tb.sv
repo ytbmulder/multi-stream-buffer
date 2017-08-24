@@ -8,7 +8,7 @@ module l1_ctrl_top_tb;
   parameter clofs_width           = $clog2(cl_size);          // number of bits needed to represent an offset within a cacheline
   parameter sid_width             = $clog2(nstrms);          // number of bits needed to represent the number of streams
   parameter ptr_width             = clid_width+clofs_width;   // number of bits needed to represent a stream pointer
-  parameter channels                 = 4;                         // 64 streams / 16 streams / BRAM tile = 4 blocks
+  parameter channels              = 4;                         // 64 streams / 16 streams / BRAM tile = 4 blocks
 
   // SETUP
   reg clk;
@@ -136,10 +136,12 @@ module l1_ctrl_top_tb;
     // Set interfaces to be ready.
     o_rst_r             <= {nstrms{1'b1}};
     o_addr_r            <= {nports{1'b1}};
+    #8;
 
     // TODO: test what happens if you start reading before all 16 cache lines have been received from L2.
     // TODO: test i_rd_v = 00000101 as in apl_top_tb
     // TODO: test if new cache line from L2 is requested immediately when a boundary is crossed. should request when 7th element is requested.
+    // TODO: is the correct o_addr_ptr still calculated if not the o_addr_r is not ready, but the rd_port o_req_r signal is not ready.
 
     // Reset stream 1.
     i_rst_v             <= 2;
@@ -167,8 +169,61 @@ module l1_ctrl_top_tb;
     i_rd_v        <= 8'b00000101;
     i_rd_sid      <= 48'h000000000041;
     #8;
+    i_rst_v       <= 1; // reset stream 0
+    #4;
+    i_rst_v       <= 0;
+    #8;
+
     i_rd_v        <= 8'b00000000;
     i_rd_sid      <= 48'h000000000000;
+    #16;
+
+    // Read stream 0 from port 2.
+    i_rd_v        <= 8'b00000100;
+    i_rd_sid      <= 48'h000000000041;
+    #16;
+
+    i_rd_v        <= 8'b00000000;
+    i_rd_sid      <= 48'h000000000000;
+    #16;
+
+    // Read stream 5 from port 1 and 2.
+    // This stream has not been reset, thus should do nothing.
+    i_rd_v        <= 8'b00000110;
+    i_rd_sid      <= 48'h000000005140;
+    #4;
+    i_rd_v        <= 8'b00000000;
+    i_rd_sid      <= 48'h000000000000;
+    #16;
+    // Reset stream 5.
+    i_rst_v             <= 32;
+    #4;
+    i_rst_v             <= 0;
+    #100;
+
+    // Test requesting two streams (6 and 7) which have not been reset yet.
+    // Then reset one and see if that one produces an o_addr_v.
+    i_rd_v        <= 8'b00001111; // Test with two requests per stream
+    i_rd_sid      <= 48'h000000187187;
+    #4;
+    i_rd_v        <= 8'b00000000;
+    i_rd_sid      <= 48'h000000000000;
+    #16;
+    // Reset stream 6.
+    i_rst_v             <= 64;
+    #4;
+    i_rst_v             <= 0;
+    #40;
+    // Reset stream 7.
+    // Test if one read port is not ready but the other one is, while requesting from the same stream.
+    i_rst_v             <= 128;
+    o_addr_r            <= 8'b11111110; // Test if o_addr_ptr is correct when one read port is not ready.
+    #4;
+    i_rst_v             <= 0;
+    #20;
+    o_addr_r            <= 8'b11111111;
+    #100;
+
     #500;
 
     // Terminate testbench.
