@@ -5,7 +5,11 @@ module l2_stream_ptr #
   parameter cache_line        = 128,                // Host cache line size in bytes.
   parameter cache_line_width  = $clog2(cache_line),
 
-  // Stream cache parameters
+  // L1 parameters
+  parameter l1_ncl            = 16,                 // Number of cache lines per stream in L1.
+  parameter clid_width        = $clog2(l1_ncl),
+
+  // L2 parameters
   parameter l2_ncl            = 256,                // Number of cache lines per stream in L2.
   parameter l2_ncl_width      = $clog2(l2_ncl),
   parameter l2_req_ncl_width  = $clog2(l2_ncl+1)    // Up to l2_ncl outstanding requests.
@@ -23,6 +27,7 @@ module l2_stream_ptr #
   // FUNCTIONAL STREAM RESET OUTPUT INTERFACE
   output                      o_rst_v,
   input                       o_rst_r,
+  output [clid_width-1:0]     o_rst_ea_b,
   output                      o_rst_end,            // End of stream is high, otherwise low.
 
   // L1 REQUEST INTERFACE
@@ -56,6 +61,9 @@ module l2_stream_ptr #
     .en       (s0_en_rst)
   );
 
+  wire s0_rst_act = o_rst_v & o_rst_r;
+  assign o_rst_ea_b = s0_rst_act ? i_rst_ea_b[clid_width+cache_line_width-1:cache_line_width] : {clid_width{1'b0}};
+
   // STREAM POINTER UPDATE AND ADDRESS CALCULATION
   // Only allow a read if a cache line is valid.
   localparam l2_min_cl = 1;
@@ -71,11 +79,10 @@ module l2_stream_ptr #
   );
 
   // Update the stream pointer when a functional reset or read is serviced.
-  wire s0_rst_act = o_rst_v & o_rst_r;
   wire s0_rd_act = s0_rd_v & s0_rd_r;
   wire s0_vlat_en = s0_rst_act | s0_rd_act;
   wire [l2_ncl_width-1:0] s0_clid;
-  wire [l2_ncl_width-1:0] s0_clid_nxt = o_rst_v ? i_rst_ea_b[l2_ncl_width+cache_line_width-1:cache_line_width] : s0_clid + 1'b1;
+  wire [l2_ncl_width-1:0] s0_clid_nxt = o_rst_v ? i_rst_ea_b[l2_ncl_width+cache_line_width-1:cache_line_width] : s0_clid + 1'b1; // TODO: use o_rst_act instead of o_rst_v?
   base_vlat_en # (.width(l2_ncl_width),.rstv(0)) is0_clid_lat (
     .clk      (clk),
     .reset    (reset),

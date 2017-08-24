@@ -5,6 +5,10 @@ module l2_ctrl_top_tb;
   parameter cache_line                = 128;                // Host cache line size in bytes.
   parameter cache_line_width          = $clog2(cache_line);
 
+  // L1 parameters
+  parameter l1_ncl                    = 16;                 // Number of cache lines per stream in L1.
+  parameter clid_width                = $clog2(l1_ncl);
+
   // Stream cache parameters
   parameter nstrms                    = 64;
   parameter nstrms_width              = $clog2(nstrms);
@@ -58,6 +62,7 @@ module l2_ctrl_top_tb;
     // FUNCTIONAL STREAM RESET OUTPUT INTERFACE
     wire [nstrms-1:0]            o_rst_v;
     reg  [nstrms-1:0]            o_rst_r;
+    wire [nstrms*clid_width-1:0] o_rst_ea_b;
     wire [nstrms-1:0]            o_rst_end;
 
   // L1 REQUEST INTERFACE
@@ -128,6 +133,7 @@ module l2_ctrl_top_tb;
 
         .o_rst_v    (o_rst_v),
         .o_rst_r    (s0_rst_r),
+        .o_rst_ea_b (o_rst_ea_b),
         .o_rst_end  (o_rst_end),
 
         .i_rd_v     (s0_rd_v),

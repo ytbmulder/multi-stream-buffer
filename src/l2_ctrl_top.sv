@@ -1,4 +1,3 @@
-// TODO: add end pointer and stream END signal.
 // TODO: build queue after merge for OpenCAPI.
 // TODO: move is1_rst_reg and is1_rd_reg into l2_stream_ptr module.
 
@@ -8,6 +7,10 @@ module l2_ctrl_top #
   parameter addr_width                  = 64,                 // Host address width in bits.
   parameter cache_line                  = 128,                // Host cache line size in bytes.
   parameter cache_line_width            = $clog2(cache_line),
+
+  // L1 parameters
+  parameter l1_ncl                      = 16,                 // Number of cache lines per stream in L1.
+  parameter clid_width                  = $clog2(l1_ncl),
 
   // Stream cache parameters
   parameter nstrms                      = 64,
@@ -31,6 +34,7 @@ module l2_ctrl_top #
   // FUNCTIONAL STREAM RESET OUTPUT INTERFACE
   output [nstrms-1:0]                   o_rst_v,
   input  [nstrms-1:0]                   o_rst_r,
+  output [nstrms*clid_width-1:0]        o_rst_ea_b,
   output [nstrms-1:0]                   o_rst_end,
 
   // L1 REQUEST INTERFACE
@@ -121,6 +125,7 @@ module l2_ctrl_top #
       l2_stream_ptr # (
         .addr_width (addr_width),
         .cache_line (cache_line),
+        .l1_ncl     (l1_ncl),
         .l2_ncl     (l2_ncl)
         ) is0_stream_control (
         .clk        (clk),
@@ -131,6 +136,7 @@ module l2_ctrl_top #
         .i_rst_ea_e (s0_rst_ea_e),
         .o_rst_v    (o_rst_v[i]),
         .o_rst_r    (o_rst_r[i]),
+        .o_rst_ea_b (o_rst_ea_b[(i+1)*clid_width-1:i*clid_width]),
         .o_rst_end  (o_rst_end[i]),
         .i_rd_v     (s1_rd_v),
         .i_rd_r     (s1_rd_r),

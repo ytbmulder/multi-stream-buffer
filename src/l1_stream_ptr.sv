@@ -21,8 +21,9 @@ module l1_stream_ptr #
     // Start a new stream - used for stream initialization. If high, stored pointer is updated.
     input                 i_rst_v,
     output                 i_rst_r,
+//    input [clid_width-1:0]          i_rst_ea_b,
+//    input                 i_rst_end,
     // TODO: Needed because of direct mapping of actual 64b addresses. Might not start at index 0 in BRAM.
-//    input [clid_width-1:0]  i_rst_clid,
 
     output                  o_rst_v,
     input                   o_rst_r,
@@ -51,7 +52,7 @@ module l1_stream_ptr #
     // only accept input requests when we have enough cachelines in the cache, and we are not resetting
     // TODO: take end of stream into account as well and that min_cl = 2. Thus what to do when s0_ncl = 1 and that is the last valid cache line of the stream? Maybe OR (s0_ncl == 1 & end of stream == true)
     // TODO: add agate to not allow any reads before functional reset has occured.
-    wire s0_en = (s0_ncl >= min_cl) & ~i_rst_v; // TODO: change to o_rst_v
+    wire s0_en = (s0_ncl >= min_cl) & ~i_rst_v; // TODO: change to o_rst_v or remove rst statement.
 
     wire [nports-1:0]   s0_v;
     wire [nports-1:0]   s0_r;
@@ -64,15 +65,15 @@ module l1_stream_ptr #
         .width  (nports)
     ) is0_igt(
         .i_v    (i_rd_v),
-        .i_r    (i_rd_r), //output: i_r = en & o_r;
-        .o_v    (s0_v),   //output: o_v = en & i_v;
+        .i_r    (i_rd_r),
+        .o_v    (s0_v),
         .o_r    (s0_r),
         .en     ({nports{s0_en}})
     );
 
     // Only allow reset if there are no outstanding requests.
-    //wire s0_rst_v, s0_rst_r;
-    wire s0_en_rst = s0_ncl_req_zero & s0_ncl_zero; //(s0_ncl == xncl); // if there are no outstanding requests, it is safe to functionally reset the stream. after & is from historic assign statement, not sure if needed but does allow only a reset if there are no outstanding requests and if all lines are valid. assume that after stream end pointer, you put in 'valid' lines which are garbage.
+    wire s0_en_rst = s0_ncl_req_zero & s0_ncl_zero; // TODO: add; & i_rst_end;
+    //(s0_ncl == xncl); // if there are no outstanding requests, it is safe to functionally reset the stream. after & is from historic assign statement, not sure if needed but does allow only a reset if there are no outstanding requests and if all lines are valid. assume that after stream end pointer, you put in 'valid' lines which are garbage.
     base_agate # (
         .width  (1)
     ) is0_reset_agate(
@@ -105,8 +106,6 @@ module l1_stream_ptr #
 
     // Cache line id and offset incrementing.
     wire [clofs_width:0]  s0_clofs_nxt = s0_clofs + s0_inc; // 4 bits because offset = 3 and 1b for carry
-    wire                  s0_clofs_carry = s0_clofs_nxt[clofs_width]; // pick off the carry bit
-    wire [clid_width-1:0] s0_clid_nxt = s0_clid + s0_clofs_carry;
     base_vlat # (
         .width  (clofs_width)
     ) is0_clofs_lat (
@@ -115,6 +114,9 @@ module l1_stream_ptr #
         .din(s0_clofs_nxt[clofs_width-1:0]), // don't include the carry bit in the update
         .q(s0_clofs)
     );
+    wire                  s0_clofs_carry = s0_clofs_nxt[clofs_width]; // pick off the carry bit
+    wire [clid_width-1:0] s0_clid_nxt = s0_clid + s0_clofs_carry;
+    // TODO: new s0_clid_nxt signal here. use base_vlat_en module instead.
     base_vlat # (
         .width      (clid_width)
     ) is0_clid_lat (

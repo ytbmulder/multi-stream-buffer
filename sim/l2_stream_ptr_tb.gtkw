@@ -1,19 +1,19 @@
 [*]
 [*] GTKWave Analyzer v3.3.82 (w)1999-2017 BSI
-[*] Thu Aug 24 11:30:10 2017
+[*] Thu Aug 24 15:04:35 2017
 [*]
 [dumpfile] "/Users/ytbmulder/Google Drive/Thesis/Verilog/stream-cache/work/l2_stream_ptr_tb.vcd"
-[dumpfile_mtime] "Thu Aug 24 11:26:22 2017"
-[dumpfile_size] 200151
+[dumpfile_mtime] "Thu Aug 24 14:59:27 2017"
+[dumpfile_size] 209809
 [savefile] "/Users/ytbmulder/Google Drive/Thesis/Verilog/stream-cache/sim/l2_stream_ptr_tb.gtkw"
 [timestart] 95
 [size] 1440 852
 [pos] -1 -1
-*-4.000000 116 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-4.000000 112 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] l2_stream_ptr_tb.
 [treeopen] l2_stream_ptr_tb.IDUT.
 [sst_width] 193
-[signals_width] 207
+[signals_width] 322
 [sst_expanded] 1
 [sst_vpaned_height] 257
 @28
@@ -32,6 +32,9 @@ l2_stream_ptr_tb.IDUT.i_rst_ea_e[63:0]
 @28
 l2_stream_ptr_tb.IDUT.o_rst_v
 l2_stream_ptr_tb.IDUT.o_rst_r
+@24
+l2_stream_ptr_tb.IDUT.o_rst_ea_b[3:0]
+@28
 l2_stream_ptr_tb.IDUT.o_rst_end
 @200
 -INPUT READ

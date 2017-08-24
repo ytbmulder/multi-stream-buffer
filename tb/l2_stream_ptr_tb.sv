@@ -148,7 +148,7 @@ module l2_stream_ptr_tb;
 
     // Functionally reset this stream.
     i_rst_v         <= 1;
-    i_rst_ea_b      <= 128*256; // 32768 mod 128 = 0
+    i_rst_ea_b      <= 1*128*256; // 32768 mod 128 = 0
     i_rst_ea_e      <= 2*128*256; // Test with less than number of cache lines. Shows that no more requests will be made.
     #4;
     i_rst_v         <= 0;
