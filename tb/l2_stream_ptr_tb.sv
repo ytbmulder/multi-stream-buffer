@@ -193,6 +193,18 @@ module l2_stream_ptr_tb;
     i_rd_v          <= 0;
     #8;
 
+    // Read from this stream until it is empty.
+    i_rd_v          <= 1;
+    #1012;
+    i_rd_v          <= 0;
+    #16;
+
+    // Read when stream has finished, so no more valid lines available.
+    i_rd_v          <= 1;
+    #4;
+    i_rd_v          <= 0;
+    #16;
+
     // Terminate testbench.
     i_rst_v         <= 0;
     i_rst_ea_b      <= 0;

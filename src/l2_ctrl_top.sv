@@ -25,11 +25,13 @@ module l2_ctrl_top #
   // FUNCTIONAL STREAM RESET INPUT INTERFACE
   input  [nstrms-1:0]                   i_rst_v,
   output [nstrms-1:0]                   i_rst_r,
-  input  [addr_width-1:0]               i_rst_ea,
+  input  [addr_width-1:0]               i_rst_ea_b,
+  input  [addr_width-1:0]               i_rst_ea_e,
 
   // FUNCTIONAL STREAM RESET OUTPUT INTERFACE
   output [nstrms-1:0]                   o_rst_v,
   input  [nstrms-1:0]                   o_rst_r,
+  output [nstrms-1:0]                   o_rst_end,
 
   // L1 REQUEST INTERFACE
   input  [nstrms-1:0]                   i_rd_v,
@@ -56,16 +58,16 @@ module l2_ctrl_top #
   // FUNCTIONAL STREAM RESET INTERFACE
   // Use reduction OR to have only one i_rst_ea register instead of nstreams.
   wire s0_rst_ea_v = | i_rst_v;
-  wire [addr_width-1:0] s0_rst_ea;
-  base_areg # (.lbl(3'b110),.width(addr_width)) is1_rstea_reg (
+  wire [addr_width-1:0] s0_rst_ea_b, s0_rst_ea_e;
+  base_areg # (.lbl(3'b110),.width(2*addr_width)) is1_rstea_reg (
     .clk    (clk),
     .reset  (reset),
     .i_v    (s0_rst_ea_v),
     .i_r    (),
-    .i_d    (i_rst_ea),
+    .i_d    ({i_rst_ea_b, i_rst_ea_e}),
     .o_v    (),
     .o_r    (1'b1), // this module is always ready to accept new data.
-    .o_d    (s0_rst_ea)
+    .o_d    ({s0_rst_ea_b, s0_rst_ea_e})
   );
 
   // Address merge signals.
@@ -125,9 +127,11 @@ module l2_ctrl_top #
         .reset      (reset),
         .i_rst_v    (s1_rst_v),
         .i_rst_r    (s1_rst_r),
-        .i_rst_ea   (s0_rst_ea),
+        .i_rst_ea_b (s0_rst_ea_b),
+        .i_rst_ea_e (s0_rst_ea_e),
         .o_rst_v    (o_rst_v[i]),
         .o_rst_r    (o_rst_r[i]),
+        .o_rst_end  (o_rst_end[i]),
         .i_rd_v     (s1_rd_v),
         .i_rd_r     (s1_rd_r),
         .o_addr_v   (s1_addr_v[i]),

@@ -50,51 +50,54 @@ module l2_ctrl_top_tb;
 
     // SIGNAL DECLARATIONS
     // FUNCTIONAL STREAM RESET INPUT INTERFACE
-	reg [nstrms-1:0] 								i_rst_v;
-	wire [nstrms-1:0] 								i_rst_r;
-  reg [addr_width-1:0]        i_rst_ea;
+  reg [nstrms-1:0]                 i_rst_v;
+  wire [nstrms-1:0]                 i_rst_r;
+  reg [addr_width-1:0]        i_rst_ea_b;
+  reg [addr_width-1:0]        i_rst_ea_e;
 
     // FUNCTIONAL STREAM RESET OUTPUT INTERFACE
-    wire [nstrms-1:0]				    o_rst_v;
-    reg  [nstrms-1:0]				    o_rst_r;
+    wire [nstrms-1:0]            o_rst_v;
+    reg  [nstrms-1:0]            o_rst_r;
+    wire [nstrms-1:0]            o_rst_end;
 
-	// L1 REQUEST INTERFACE
-	reg  [nstrms-1:0]				    i_rd_v;
-	wire [nstrms-1:0]				    i_rd_r;
+  // L1 REQUEST INTERFACE
+  reg  [nstrms-1:0]            i_rd_v;
+  wire [nstrms-1:0]            i_rd_r;
 
-	// L2 URAM READ INTERFACE
-	wire [channels-1:0]					o_addr_v;
-	reg  [channels-1:0]					o_addr_r;
-	wire [channels*l2_nstrms_width-1:0]	o_addr_sid;
-	wire [channels*l2_ncl_width-1:0] 	    o_addr_ptr;
+  // L2 URAM READ INTERFACE
+  wire [channels-1:0]          o_addr_v;
+  reg  [channels-1:0]          o_addr_r;
+  wire [channels*l2_nstrms_width-1:0]  o_addr_sid;
+  wire [channels*l2_ncl_width-1:0]       o_addr_ptr;
 
     // OPENCAPI 3.0 REQUEST INTERFACE
-    wire 					            o_req_v;
-    reg  				                o_req_r;
-    wire [nstrms_width-1:0]	o_req_sid;
+    wire                       o_req_v;
+    reg                          o_req_r;
+    wire [nstrms_width-1:0]  o_req_sid;
     wire [addr_width-1:0] o_req_ea;
 
     // OPENCAPI 3.0 RESPONSE INTERFACE
-    reg  				                i_rsp_v;
-    wire 				                i_rsp_r;
-    reg  [nstrms_width-1:0]	            i_rsp_sid;
+    reg                          i_rsp_v;
+    wire                         i_rsp_r;
+    reg  [nstrms_width-1:0]              i_rsp_sid;
 
     // after reg
-    wire [nstrms-1:0] 								s0_rst_v;
-    wire [addr_width-1:0]       s0_rst_ea;
-    wire  [nstrms-1:0]				    s0_rst_r;
-	wire  [nstrms-1:0]				    s0_rd_v;
-	wire  [channels-1:0]					s0_addr_r;
+    wire [nstrms-1:0]                 s0_rst_v;
+    wire [addr_width-1:0]       s0_rst_ea_b;
+    wire [addr_width-1:0]       s0_rst_ea_e;
+    wire  [nstrms-1:0]            s0_rst_r;
+  wire  [nstrms-1:0]            s0_rd_v;
+  wire  [channels-1:0]          s0_addr_r;
 
     // REGISTER INPUTS
     base_delay # (
-        .width(nstrms+addr_width+nstrms+channels+nstrms),
+        .width(nstrms+2*addr_width+nstrms+channels+nstrms),
         .n(1)
     ) is0_input_delay (
         .clk (clk),
         .reset (reset),
-        .i_d ({ i_rst_v,  i_rst_ea,  o_rst_r,  i_rd_v,  o_addr_r}),
-        .o_d ({s0_rst_v, s0_rst_ea, s0_rst_r, s0_rd_v, s0_addr_r})
+        .i_d ({ i_rst_v,  i_rst_ea_b,  i_rst_ea_e,  o_rst_r,  i_rd_v,  o_addr_r}),
+        .o_d ({s0_rst_v, s0_rst_ea_b, s0_rst_ea_e, s0_rst_r, s0_rd_v, s0_addr_r})
     );
 
     // Loop back req and rsp for OpenCAPI 3.0.
@@ -120,10 +123,12 @@ module l2_ctrl_top_tb;
 
         .i_rst_v    (s0_rst_v), // TODO: use decoder to make writing tb easier
         .i_rst_r    (i_rst_r),
-        .i_rst_ea   (s0_rst_ea),
+        .i_rst_ea_b (s0_rst_ea_b),
+        .i_rst_ea_e (s0_rst_ea_e),
 
         .o_rst_v    (o_rst_v),
         .o_rst_r    (s0_rst_r),
+        .o_rst_end  (o_rst_end),
 
         .i_rd_v     (s0_rd_v),
         .i_rd_r     (i_rd_r),
@@ -147,7 +152,8 @@ module l2_ctrl_top_tb;
   initial begin
     // Initially everything is set to zero.
     i_rst_v         <= 64'h0000000000000000;
-    i_rst_ea        <= 0;
+    i_rst_ea_b      <= 0;
+    i_rst_ea_e      <= 0;
     o_rst_r         <= 64'h0000000000000000;
     i_rd_v          <= 64'h0000000000000000;
     o_addr_r        <= 4'b0000;
@@ -166,25 +172,30 @@ module l2_ctrl_top_tb;
 
     // Reset stream 1.
     i_rst_v         <= 64'h0000000000000002;
-    i_rst_ea        <= 4;
+    i_rst_ea_b      <= 128*256*1;
+    i_rst_ea_e      <= 128*256*3;
     #4;
 
     // Reset stream 17.
     i_rst_v         <= 64'h0000000000020000;
-    i_rst_ea        <= 8;
+    i_rst_ea_b      <= 128*256*4;
+    i_rst_ea_e      <= 128*256*6;
     #4;
 
     // Reset stream 2.
     i_rst_v         <= 64'h0000000000000004;
-    i_rst_ea        <= 16;
+    i_rst_ea_b      <= 128*256*8;
+    i_rst_ea_e      <= 128*256*10;
     #4;
 
     // Reset stream 1 again. This reset is not accepted as expected.
     i_rst_v         <= 64'h0000000000000002;
-    i_rst_ea        <= 32;
+    i_rst_ea_b      <= 32;
+    i_rst_ea_e      <= 32*128;
     #4;
     i_rst_v         <= 64'h0000000000000000;
-    i_rst_ea        <= 0;
+    i_rst_ea_b      <= 0;
+    i_rst_ea_e      <= 0;
     #100;
 
     // Read from stream 1 (i_rd_v is one-hot signal).
@@ -199,7 +210,8 @@ module l2_ctrl_top_tb;
 
     // Terminate testbench.
     i_rst_v         <= 64'h0000000000000000;
-    i_rst_ea        <= 0;
+    i_rst_ea_b      <= 0;
+    i_rst_ea_e      <= 0;
     o_rst_r         <= 64'h0000000000000000;
     i_rd_v          <= 64'h0000000000000000;
     o_addr_r        <= 4'b0000;

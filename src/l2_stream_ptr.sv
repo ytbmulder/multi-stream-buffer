@@ -47,7 +47,7 @@ module l2_stream_ptr #
   // FUNCTIONAL RESET INTERFACE
   // Only allow functional reset if there are no outstanding requests & when the stream has ended & when there are no more valid lines (everything has been read).
   // Functionally resetting a stream has priority over reading a stream.
-  wire s0_en_rst = s0_ncl_req_zero & o_rst_end & s0_ncl_valid_zero; // TODO: maybe o_rst_end is obsolete because it is implied by the other two. First the stream will end and then no reqs nor valid lines will be present.
+  wire s0_en_rst = s0_ncl_req_zero & s0_strm_end & s0_ncl_valid_zero;
   base_agate # (.width(1)) is0_reset_agate (
     .i_v      (i_rst_v),
     .i_r      (i_rst_r),
@@ -123,8 +123,8 @@ module l2_stream_ptr #
   localparam [l2_req_ncl_width-1:0] xl2_ncl = l2_ncl;
   wire s0_req_act = o_req_v & o_req_r;
   wire [l2_req_ncl_width-1:0] s0_ncl_req;
-  wire s0_ncl_req_inc = s0_rd_act & ~o_rst_end; // increase if a read is serviced and the stream has not yet ended.
-  wire s0_ncl_req_dec = s0_req_act | (~s0_ncl_req_zero & o_rst_end); // decrease if req is serviced or if a req is made during the end of a stream until there are no more outstanding requests.
+  wire s0_ncl_req_inc = s0_rd_act & ~s0_strm_end; // increase if a read is serviced and the stream has not yet ended.
+  wire s0_ncl_req_dec = s0_req_act | (~s0_ncl_req_zero & s0_strm_end); // decrease if req is serviced or if a req is made during the end of a stream until there are no more outstanding requests.
   wire s0_ncl_req_zero;
   base_incdec # (
     .width    (l2_req_ncl_width),
@@ -165,9 +165,12 @@ module l2_stream_ptr #
     .q        (s0_ea_e)
   );
 
-  assign o_rst_end = (s0_ea >= s0_ea_e); // If current EA is larger or equal to end EA, the stream has ended. If it has ended, you may reset. It is larger or equal because if a stream is smaller than the number of cache lines, requests will be sent out until all cache lines have been requested.
-  assign o_req_v = ~s0_ncl_req_zero & ~o_rst_end; //o_rst_end is here to stop making requests when the end of a stream is reached.
+  wire s0_strm_end = (s0_ea >= s0_ea_e); // If current EA is larger or equal to end EA, the stream has ended. If it has ended, you may reset. It is larger or equal because if a stream is smaller than the number of cache lines, requests will be sent out until all cache lines have been requested.
+  assign o_req_v = ~s0_ncl_req_zero & ~s0_strm_end; //s0_strm_end is here to stop making requests when the end of a stream is reached.
   assign o_req_ea = s0_ea;
   assign i_rsp_r = 1'b1; // This module is always ready to accept a response.
+
+  // Real end of stream valid signal. No outstanding reqs nor valid lines available.
+  wire o_rst_end = s0_en_rst;
 
 endmodule // l2_stream_ptr

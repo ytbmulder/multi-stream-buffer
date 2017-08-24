@@ -1,3 +1,5 @@
+// TODO: add end of stream signal. use agate with L2 as input. give as input to AFU.
+
 module l1_stream_ptr #
 (
     parameter nports                    = 8,
