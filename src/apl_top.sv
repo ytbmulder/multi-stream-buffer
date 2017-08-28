@@ -41,7 +41,7 @@ module apl_top #
   // FUNCTIONAL STREAM RESET OUTPUT INTERFACE
   output [nstrms-1:0]                   o_rst_v,
   input  [nstrms-1:0]                   o_rst_r,
-  output [nstrms-1:0]                   o_rst_end,
+  output [nstrms-1:0]                   o_rst_end, // TODO: implement in L1
 
   // AFU READ INTERFACE
   input  [nports-1:0]                   i_rd_v,
@@ -100,13 +100,14 @@ module apl_top #
   wire [nstrms-1:0] s2_rst_v, s2_rst_r;
   wire [nstrms-1:0] s0_req_v, s0_req_r;
 
-  wire [nstrms*l1_ncl_width-1:0] s2_rst_ea_b; // TODO: connect to L1.
+  wire [nstrms*l1_ncl_width-1:0] s2_rst_ea_b;
 
   l1_ctrl_top is0_l1_ctrl_top (
     .clk            (clk),
     .reset          (reset),
     .i_rst_v        (s2_rst_v),
     .i_rst_r        (s2_rst_r),
+    .i_rst_ea_b     (s2_rst_ea_b),
     .o_rst_v        (o_rst_v),
     .o_rst_r        (o_rst_r),
     .i_rd_v         (i_rd_v),
@@ -154,12 +155,5 @@ module apl_top #
     .i_rsp_r        (i_rsp_r),
     .i_rsp_sid      (i_rsp_sid)
   );
-
-/*
-  // Demux L2 address interface for loop back to L1.
-  wire [nstrms-1:0] s1_addr_sid_dec, s1_addr_v_dec, s1_addr_r_dec;
-  base_decode_le#(.enc_width(nstrms_width),.dec_width(nstrms)) is1_addr_sid_dec(.din(o_l2_addr_sid),.dout(s1_addr_sid_dec),.en(1'b1));
-  base_ademux#(.ways(nstrms)) is1_addr_demux (.i_v(o_l2_addr_v),.i_r(o_l2_addr_r),.o_v(i_rsp_uram_v),.o_r(i_rsp_uram_r),.sel(s1_addr_sid_dec));
-*/
 
 endmodule

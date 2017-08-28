@@ -17,6 +17,7 @@ module l1_ctrl_top #
     // FUNCTIONAL STREAM RESET OUTPUT INTERFACE
     input  [nstrms-1:0]             i_rst_v,
     output [nstrms-1:0]             i_rst_r,
+    input  [nstrms*clid_width-1:0]  i_rst_ea_b,
 
     // FUNCTIONAL STREAM RESET OUTPUT INTERFACE
     output [nstrms-1:0]             o_rst_v,
@@ -117,25 +118,26 @@ module l1_ctrl_top #
     endgenerate
 
     // PARSE INITIALIZATION INTERFACE DATA
-    wire [nstrms-1:0]       s1_rst_v, s1_rst_r;
-    wire [sid_width-1:0]    s1_rst_sid;
+    wire [nstrms-1:0] s1_rst_v, s1_rst_r;
+    wire [nstrms*clid_width-1:0] s1_rst_ea_b;
 
     // TODO: add agate for reset as done for L2 stream control.
+    // TODO: merge with genvar j.
     genvar m;
     generate
     for(m=0; m<nstrms; m=m+1) begin : GEN_REGS
         base_areg # (
             .lbl        (3'b000),
-            .width      (1) //(sid_width)
+            .width      (clid_width)
         ) is1_rst_reg (
             .clk        (clk),
             .reset      (reset),
             .i_v        (i_rst_v[m]),
             .i_r        (i_rst_r[m]),
-            .i_d        (1'b0), //(i_rst_sid),
+            .i_d        (i_rst_ea_b[(m+1)*clid_width-1:m*clid_width]),
             .o_v        (s1_rst_v[m]),
             .o_r        (s1_rst_r[m]),
-            .o_d        () //(s1_rst_sid)
+            .o_d        (s1_rst_ea_b[(m+1)*clid_width-1:m*clid_width])
         );
     end
     endgenerate
@@ -161,6 +163,7 @@ module l1_ctrl_top #
                 .o_tmp(o_tmp[j]),
                 .clk(clk), .reset(reset),
                 .i_rst_v(s1_rst_v[j]),.i_rst_r(s1_rst_r[j]),        // Initialization interface.
+                .i_rst_ea_b(s1_rst_ea_b[(j+1)*clid_width-1:j*clid_width]),
                 .o_rst_v(o_rst_v[j]),.o_rst_r(o_rst_r[j]),
                 .i_rd_v(s1_rd_xpose_v[(j+1)*nports-1:j*nports]),    // Valid signals for this stream.
                 .i_rd_r(s1_rd_xpose_r[(j+1)*nports-1:j*nports]),    // Ready signals for this stream.

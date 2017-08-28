@@ -47,6 +47,7 @@ module l1_ctrl_top_tb;
   // SIGNAL DECLARATIONS
   reg [nstrms-1:0] i_rst_v;
   wire [nstrms-1:0] i_rst_r;
+  reg [nstrms*clid_width-1:0] i_rst_ea_b;
 
   wire [nstrms-1:0] o_rst_v;
   reg [nstrms-1:0] o_rst_r;
@@ -68,6 +69,7 @@ module l1_ctrl_top_tb;
 
   // Input after reg.
   wire [nstrms-1:0] s0_rst_v;
+  wire [nstrms*clid_width-1:0] s0_rst_ea_b;
   wire [nstrms-1:0] s0_rst_r;
   wire [nports-1:0] s0_rd_v;
   wire [nports*sid_width-1:0] s0_rd_sid;
@@ -77,11 +79,11 @@ module l1_ctrl_top_tb;
 
   // REGISTER INPUTS
   base_delay # (
-    .width(nstrms+nstrms+nports+nports*sid_width+nports),
+    .width(nstrms+nstrms*clid_width+nstrms+nports+nports*sid_width+nports),
     .n(1)
     ) is0_input_delay (.clk(clk),.reset(reset),
-    .i_d ({ i_rst_v,  o_rst_r,  i_rd_v,  i_rd_sid,  o_addr_r}),
-    .o_d ({s0_rst_v, s0_rst_r, s0_rd_v, s0_rd_sid, s0_addr_r})
+    .i_d ({ i_rst_v,  i_rst_ea_b,  o_rst_r,  i_rd_v,  i_rd_sid,  o_addr_r}),
+    .o_d ({s0_rst_v, s0_rst_ea_b, s0_rst_r, s0_rd_v, s0_rd_sid, s0_addr_r})
   );
 
     // Loop back req and rsp for L2.
@@ -96,7 +98,6 @@ module l1_ctrl_top_tb;
         end
     endgenerate
 
-
     // DUT
     l1_ctrl_top IDUT (
         .clk                (clk),
@@ -104,6 +105,7 @@ module l1_ctrl_top_tb;
 
         .i_rst_v            (s0_rst_v),
         .i_rst_r            (i_rst_r),
+        .i_rst_ea_b         (s0_rst_ea_b),
 
         .o_rst_v            (o_rst_v),
         .o_rst_r            (s0_rst_r),
@@ -127,6 +129,7 @@ module l1_ctrl_top_tb;
   // DRIVE INPUTS - best practise to change them on a negative edge.
   initial begin
     i_rst_v             <= 0;
+    i_rst_ea_b          <= 0;
     o_rst_r             <= 0;
     i_rd_v              <= 0;
     i_rd_sid            <= 0;
@@ -144,17 +147,19 @@ module l1_ctrl_top_tb;
     // TODO: is the correct o_addr_ptr still calculated if not the o_addr_r is not ready, but the rd_port o_req_r signal is not ready.
 
     // Reset stream 1.
-    i_rst_v             <= 2;
+    i_rst_v       <= 2;
+    i_rst_ea_b    <= 0;
     #4;
-    i_rst_v             <= 0;
+    i_rst_v       <= 0;
+    i_rst_ea_b    <= 0;
     #100;
 
     // Read stream 1 from port 0.
-    i_rd_v              <= 8'b00000001;
-    i_rd_sid            <= 48'h000000000001;
+    i_rd_v        <= 8'b00000001;
+    i_rd_sid      <= 48'h000000000001;
     #8;
-    i_rd_v              <= 8'b00000000;
-    i_rd_sid            <= 48'h000000000000;
+    i_rd_v        <= 8'b00000000;
+    i_rd_sid      <= 48'h000000000000;
     #12;
 
     // Read stream 1 from port 0 and 1.
@@ -196,9 +201,11 @@ module l1_ctrl_top_tb;
     i_rd_sid      <= 48'h000000000000;
     #16;
     // Reset stream 5.
-    i_rst_v             <= 32;
+    i_rst_v       <= 32;
+    i_rst_ea_b    <= 0;
     #4;
-    i_rst_v             <= 0;
+    i_rst_v       <= 0;
+    i_rst_ea_b    <= 0;
     #100;
 
     // Test requesting two streams (6 and 7) which have not been reset yet.
@@ -210,28 +217,33 @@ module l1_ctrl_top_tb;
     i_rd_sid      <= 48'h000000000000;
     #16;
     // Reset stream 6.
-    i_rst_v             <= 64;
+    i_rst_v       <= 64;
+    i_rst_ea_b    <= 0;
     #4;
-    i_rst_v             <= 0;
+    i_rst_v       <= 0;
+    i_rst_ea_b    <= 0;
     #40;
     // Reset stream 7.
     // Test if one read port is not ready but the other one is, while requesting from the same stream.
-    i_rst_v             <= 128;
-    o_addr_r            <= 8'b11111110; // Test if o_addr_ptr is correct when one read port is not ready.
+    i_rst_v       <= 128;
+    i_rst_ea_b    <= 0;
+    o_addr_r      <= 8'b11111110; // Test if o_addr_ptr is correct when one read port is not ready.
     #4;
-    i_rst_v             <= 0;
+    i_rst_v       <= 0;
+    i_rst_ea_b    <= 0;
     #20;
-    o_addr_r            <= 8'b11111111;
+    o_addr_r      <= 8'b11111111;
     #100;
 
     #500;
 
     // Terminate testbench.
-    i_rst_v             <= 0;
-    o_rst_r             <= 0;
-    i_rd_v              <= 0;
-    i_rd_sid            <= 0;
-    o_addr_r            <= 0;
+    i_rst_v       <= 0;
+    i_rst_ea_b    <= 0;
+    o_rst_r       <= 0;
+    i_rd_v        <= 0;
+    i_rd_sid      <= 0;
+    o_addr_r      <= 0;
   end
 
 endmodule // l1_ctrl_top_tb

@@ -20,7 +20,7 @@ export TOP=apl_top_tb
 set -euo pipefail
 
 #TODO: set the correct path (../sim/) for .gtkw files when directly saved instead of saved as.
-
+#TODO: make TOP variable an input from the command line.
 #TODO: test if Swith.pm is installed on host machine - invoking gtkwave from bash script needs to run perl script within gtkwave.app on macOS according to gtkwave manual. however this gave an error with perl since perl could not locate Switch.pm in @INC. run 'sudo cpan -f Switch' to install and then calling gtkwave works from command line.
 #TODO: test if iverilog and gtkwave are installed
 # - check which operating system is used.
