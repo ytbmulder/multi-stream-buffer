@@ -25,7 +25,7 @@ module l1_ctrl_top_tb;
   initial
   begin
     clk = 0;
-    #1000;
+    #2000;
     $finish;
   end
 
@@ -48,6 +48,7 @@ module l1_ctrl_top_tb;
   reg [nstrms-1:0] i_rst_v;
   wire [nstrms-1:0] i_rst_r;
   reg [nstrms*clid_width-1:0] i_rst_ea_b;
+  reg [nstrms-1:0] i_rst_end;
 
   wire [nstrms-1:0] o_rst_v;
   reg [nstrms-1:0] o_rst_r;
@@ -70,6 +71,7 @@ module l1_ctrl_top_tb;
   // Input after reg.
   wire [nstrms-1:0] s0_rst_v;
   wire [nstrms*clid_width-1:0] s0_rst_ea_b;
+  wire [nstrms-1:0] s0_rst_end;
   wire [nstrms-1:0] s0_rst_r;
   wire [nports-1:0] s0_rd_v;
   wire [nports*sid_width-1:0] s0_rd_sid;
@@ -79,11 +81,11 @@ module l1_ctrl_top_tb;
 
   // REGISTER INPUTS
   base_delay # (
-    .width(nstrms+nstrms*clid_width+nstrms+nports+nports*sid_width+nports),
+    .width(nstrms+nstrms*clid_width+nstrms+nstrms+nports+nports*sid_width+nports),
     .n(1)
     ) is0_input_delay (.clk(clk),.reset(reset),
-    .i_d ({ i_rst_v,  i_rst_ea_b,  o_rst_r,  i_rd_v,  i_rd_sid,  o_addr_r}),
-    .o_d ({s0_rst_v, s0_rst_ea_b, s0_rst_r, s0_rd_v, s0_rd_sid, s0_addr_r})
+    .i_d ({ i_rst_v,  i_rst_ea_b,  i_rst_end,  o_rst_r,  i_rd_v,  i_rd_sid,  o_addr_r}),
+    .o_d ({s0_rst_v, s0_rst_ea_b, s0_rst_end, s0_rst_r, s0_rd_v, s0_rd_sid, s0_addr_r})
   );
 
     // Loop back req and rsp for L2.
@@ -106,6 +108,7 @@ module l1_ctrl_top_tb;
         .i_rst_v            (s0_rst_v),
         .i_rst_r            (i_rst_r),
         .i_rst_ea_b         (s0_rst_ea_b),
+        .i_rst_end          (s0_rst_end),
 
         .o_rst_v            (o_rst_v),
         .o_rst_r            (s0_rst_r),
@@ -128,17 +131,18 @@ module l1_ctrl_top_tb;
 
   // DRIVE INPUTS - best practise to change them on a negative edge.
   initial begin
-    i_rst_v             <= 0;
-    i_rst_ea_b          <= 0;
-    o_rst_r             <= 0;
-    i_rd_v              <= 0;
-    i_rd_sid            <= 0;
-    o_addr_r            <= 0;
+    i_rst_v       <= 0;
+    i_rst_ea_b    <= 0;
+    i_rst_end     <= 0;
+    o_rst_r       <= 0;
+    i_rd_v        <= 0;
+    i_rd_sid      <= 0;
+    o_addr_r      <= 0;
     #102;
 
     // Set interfaces to be ready.
-    o_rst_r             <= {nstrms{1'b1}};
-    o_addr_r            <= {nports{1'b1}};
+    o_rst_r       <= {nstrms{1'b1}};
+    o_addr_r      <= {nports{1'b1}};
     #8;
 
     // TODO: test what happens if you start reading before all 16 cache lines have been received from L2.
@@ -146,12 +150,27 @@ module l1_ctrl_top_tb;
     // TODO: test if new cache line from L2 is requested immediately when a boundary is crossed. should request when 7th element is requested.
     // TODO: is the correct o_addr_ptr still calculated if not the o_addr_r is not ready, but the rd_port o_req_r signal is not ready.
 
+/*
+    // TODO: if you read before functionally resetting, the read will be discarded.
+    // In this case, the second read lines up after the reset and is therefore serviced.
+    // Test read before functional reset.
+    // Read stream 1 from port 0.
+    i_rd_v        <= 8'b00000010;
+    i_rd_sid      <= 48'h000000000040;
+    #8;
+    i_rd_v        <= 8'b00000000;
+    i_rd_sid      <= 48'h000000000000;
+    #16;
+*/
+
     // Reset stream 1.
     i_rst_v       <= 2;
     i_rst_ea_b    <= 0;
+    i_rst_end     <= 2;
     #4;
     i_rst_v       <= 0;
     i_rst_ea_b    <= 0;
+    i_rst_end     <= 0;
     #100;
 
     // Read stream 1 from port 0.
@@ -174,9 +193,14 @@ module l1_ctrl_top_tb;
     i_rd_v        <= 8'b00000101;
     i_rd_sid      <= 48'h000000000041;
     #8;
-    i_rst_v       <= 1; // reset stream 0
+    // Reset stream 0
+    i_rst_v       <= 1;
+    i_rst_ea_b    <= 0;
+    i_rst_end     <= 1;
     #4;
     i_rst_v       <= 0;
+    i_rst_ea_b    <= 0;
+    i_rst_end     <= 0;
     #8;
 
     i_rd_v        <= 8'b00000000;
@@ -203,9 +227,11 @@ module l1_ctrl_top_tb;
     // Reset stream 5.
     i_rst_v       <= 32;
     i_rst_ea_b    <= 0;
+    i_rst_end     <= 32;
     #4;
     i_rst_v       <= 0;
     i_rst_ea_b    <= 0;
+    i_rst_end     <= 0;
     #100;
 
     // Test requesting two streams (6 and 7) which have not been reset yet.
@@ -219,27 +245,59 @@ module l1_ctrl_top_tb;
     // Reset stream 6.
     i_rst_v       <= 64;
     i_rst_ea_b    <= 0;
+    i_rst_end     <= 64;
     #4;
     i_rst_v       <= 0;
     i_rst_ea_b    <= 0;
+    i_rst_end     <= 0;
     #40;
     // Reset stream 7.
     // Test if one read port is not ready but the other one is, while requesting from the same stream.
     i_rst_v       <= 128;
     i_rst_ea_b    <= 0;
+    i_rst_end     <= 128;
     o_addr_r      <= 8'b11111110; // Test if o_addr_ptr is correct when one read port is not ready.
     #4;
     i_rst_v       <= 0;
     i_rst_ea_b    <= 0;
+    i_rst_end     <= 0;
     #20;
     o_addr_r      <= 8'b11111111;
     #100;
 
-    #500;
+    // End of stream 1 test.
+    i_rst_end     <= 2;
+    #4;
+    i_rd_v        <= 8'b00000001;
+    i_rd_sid      <= 48'h000000000001;
+    #24;
+    #444;
+    #28;
+    i_rd_v        <= 8'b00000011;
+    i_rd_sid      <= 48'h000000000041; // TODO: implement output rst_v/stream_end signal. then see if i need to allow for reads in order to not get into a deadlock for a read port.
+    // TODO: probably best to just accept a read but not produce a valid output.
+    // TODO: also check about the valid output to l1_stream_ptr. should not update global ptr. however, in this case it doesnt matter anymore what the global ptr's value is since the stream has ended anyway.
+    #16;
+    i_rd_v        <= 8'b00000000;
+    i_rd_sid      <= 48'h000000000000;
+    #12;
+
+    // Reset stream 1 for the second time.
+    i_rst_v       <= 2;
+    i_rst_ea_b    <= 0;
+    i_rst_end     <= 2;
+    #4;
+    i_rst_v       <= 0;
+    i_rst_ea_b    <= 0;
+    i_rst_end     <= 0;
+    #4;
+
+    #16;
 
     // Terminate testbench.
     i_rst_v       <= 0;
     i_rst_ea_b    <= 0;
+    i_rst_end     <= 0;
     o_rst_r       <= 0;
     i_rd_v        <= 0;
     i_rd_sid      <= 0;

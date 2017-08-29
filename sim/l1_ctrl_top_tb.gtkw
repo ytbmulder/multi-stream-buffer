@@ -1,19 +1,22 @@
 [*]
 [*] GTKWave Analyzer v3.3.82 (w)1999-2017 BSI
-[*] Thu Aug 24 10:30:46 2017
+[*] Tue Aug 29 10:13:09 2017
 [*]
 [dumpfile] "/Users/ytbmulder/Google Drive/Thesis/Verilog/stream-cache/work/l1_ctrl_top_tb.vcd"
-[dumpfile_mtime] "Thu Aug 24 10:26:57 2017"
-[dumpfile_size] 896477
+[dumpfile_mtime] "Tue Aug 29 10:12:35 2017"
+[dumpfile_size] 1073631
 [savefile] "/Users/ytbmulder/Google Drive/Thesis/Verilog/stream-cache/sim/l1_ctrl_top_tb.gtkw"
-[timestart] 496
+[timestart] 1104
 [size] 1440 852
 [pos] -1 -1
-*-4.000000 536 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-4.000000 1140 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] l1_ctrl_top_tb.
-[treeopen] l1_ctrl_top_tb.IDUT.gen1[1].iport.
+[treeopen] l1_ctrl_top_tb.IDUT.
+[treeopen] l1_ctrl_top_tb.IDUT.gen1[0].
+[treeopen] l1_ctrl_top_tb.IDUT.gen1[1].
+[treeopen] l1_ctrl_top_tb.IDUT.gen2[1].
 [sst_width] 226
-[signals_width] 317
+[signals_width] 374
 [sst_expanded] 1
 [sst_vpaned_height] 322
 @28
@@ -22,6 +25,8 @@ l1_ctrl_top_tb.IDUT.reset
 @22
 l1_ctrl_top_tb.IDUT.i_rst_v[63:0]
 l1_ctrl_top_tb.IDUT.i_rst_r[63:0]
+l1_ctrl_top_tb.IDUT.i_rst_ea_b[255:0]
+l1_ctrl_top_tb.IDUT.i_rst_end[63:0]
 l1_ctrl_top_tb.IDUT.o_rst_v[63:0]
 l1_ctrl_top_tb.IDUT.o_rst_r[63:0]
 @200
@@ -51,5 +56,20 @@ l1_ctrl_top_tb.IDUT.i_rsp_v[63:0]
 l1_ctrl_top_tb.IDUT.i_rsp_r[63:0]
 @200
 -INTERNAL
+@24
+l1_ctrl_top_tb.IDUT.gen2[1].i_stream_ptr.s0_ncl[4:0]
+l1_ctrl_top_tb.IDUT.gen2[1].i_stream_ptr.s0_ncl_req[4:0]
+@28
+l1_ctrl_top_tb.IDUT.gen2[1].i_stream_ptr.s0_en_rst
+l1_ctrl_top_tb.IDUT.gen2[1].i_stream_ptr.s0_en
+l1_ctrl_top_tb.IDUT.gen2[1].i_stream_ptr.out_of_bounds
+l1_ctrl_top_tb.IDUT.gen1[1].iport.GEN_ADDR_PTR.s1_ptr_inc
+l1_ctrl_top_tb.IDUT.gen1[1].iport.o_addr_ptr[6:0]
+l1_ctrl_top_tb.IDUT.gen1[0].iport.out_of_bounds_rd_port
+l1_ctrl_top_tb.IDUT.gen1[1].iport.out_of_bounds_rd_port
+l1_ctrl_top_tb.IDUT.gen1[1].iport.i_rd_acts[7:0]
+l1_ctrl_top_tb.IDUT.gen2[1].i_stream_ptr.s0_en_rst
+@23
+l1_ctrl_top_tb.IDUT.gen1[1].iport.o_req_v[63:0]
 [pattern_trace] 1
 [pattern_trace] 0

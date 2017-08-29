@@ -12,7 +12,7 @@ module l1_stream_ptr #
   parameter width                     = clid_width + clofs_width
 )
 (
-  output o_tmp,
+  output o_single_v,
 
   // Global signals.
   input                     clk,
@@ -22,11 +22,11 @@ module l1_stream_ptr #
   input                     i_rst_v,
   output                    i_rst_r,
   input  [clid_width-1:0]   i_rst_ea_b,
-//    input                 i_rst_end,
-  // TODO: Needed because of direct mapping of actual 64b addresses. Might not start at index 0 in BRAM.
+  input                     i_rst_end,
 
   output                    o_rst_v,
   input                     o_rst_r,
+  output                    o_rst_end, // TODO: looks like duplicate of o_rst_v.
 
   // read input - high if read stream_id is equal to the stream constant.
   input  [nports-1:0]       i_rd_v,
@@ -51,8 +51,8 @@ module l1_stream_ptr #
 
   // only accept input requests when we have enough cachelines in the cache, and we are not resetting
   // TODO: take end of stream into account as well and that min_cl = 2. Thus what to do when s0_ncl = 1 and that is the last valid cache line of the stream? Maybe OR (s0_ncl == 1 & end of stream == true)
-  // TODO: add agate to not allow any reads before functional reset has occured.
-  wire s0_en = (s0_ncl >= min_cl) & ~i_rst_v; // TODO: change to o_rst_v or remove rst statement.
+  wire s0_en = (s0_ncl >= min_cl) | (~s0_ncl_zero & i_rst_end) | i_rst_end;
+  // TODO: also enable a read when there is only one valid line and L2 stream end is high.
 
   wire [nports-1:0]   s0_v;
   wire [nports-1:0]   s0_r;
@@ -71,8 +71,8 @@ module l1_stream_ptr #
       .en     ({nports{s0_en}})
   );
 
-  // Only allow reset if there are no outstanding requests.
-  wire s0_en_rst = s0_ncl_req_zero & s0_ncl_zero; // TODO: add; & i_rst_end;
+  // Only allow reset if there are no outstanding requests, no valid lines and L2 has ended.
+  wire s0_en_rst = s0_ncl_req_zero & i_rst_end & s0_ncl_zero; // TODO: this signal could be end of stream.
   //(s0_ncl == xncl); // if there are no outstanding requests, it is safe to functionally reset the stream. after & is from historic assign statement, not sure if needed but does allow only a reset if there are no outstanding requests and if all lines are valid. assume that after stream end pointer, you put in 'valid' lines which are garbage.
   base_agate # (
       .width  (1)
@@ -84,11 +84,9 @@ module l1_stream_ptr #
       .en     (s0_en_rst)
   );
 
-  // rd_port module can only read when this module has accepted the functional reset and there is a valid line.
-  // o_tmp = has the stream been functionally reset? If so, then it is high.
-  wire s0_ncl_zero;
-  wire tmp = ~s0_ncl_zero | ~s0_ncl_req_zero;
-  assign o_tmp = tmp;
+  // Output reset stream end.
+  // TODO: this is probably not good enough since we require always two valid cache lines.
+  assign o_rst_end = s0_en_rst;
 
   // Work out by how much to increment the current pointer.
   wire [nports-1:0]   s0_act = s0_v & s0_r;
@@ -114,8 +112,7 @@ module l1_stream_ptr #
       .din(s0_clofs_nxt[clofs_width-1:0]), // don't include the carry bit in the update
       .q(s0_clofs)
   );
-  wire                  s0_clofs_carry = s0_clofs_nxt[clofs_width]; // pick off the carry bit
-  //wire [clid_width-1:0] s0_clid_nxt = s0_clid + s0_clofs_carry;
+  wire s0_clofs_carry = s0_clofs_nxt[clofs_width]; // pick off the carry bit
   wire s0_rst_act = o_rst_v & o_rst_r;
   wire [clid_width-1:0] s0_clid_nxt = s0_rst_act ? i_rst_ea_b : s0_clid + s0_clofs_carry ; // TODO: signal here. use base_vlat_en module instead.
   base_vlat # (
@@ -127,16 +124,16 @@ module l1_stream_ptr #
       .q          (s0_clid)
   );
 
-
   // TODO: should change this at some point. sim breaks if I remove the i_clrsp_r statement.
   assign i_clrsp_r = 1'b1; // for now, no back pressure is needed on responses
   wire s0_clreq_act = o_clreq_v & o_clreq_r;   // we are generating a request, and it is accepted
   wire s0_clrsp_act = i_clrsp_v & i_clrsp_r;   // we have a valid response and we are accepting it
   wire s0_ncl_inc = s0_clrsp_act;              // increment the number of valid cachelines when we accept a valid response
   wire s0_ncl_dec = s0_clofs_carry;            // decrement the number of valid cachelines when we carry
-  wire s0_ncl_req_inc = s0_clofs_carry;        // increment the number of requests needed when we carry
-  wire s0_ncl_req_dec = s0_clreq_act;          // decrement the number of requests needed when a valid request is accepted
+  wire s0_ncl_req_inc = s0_clofs_carry & ~i_rst_end; // increment the number of requests needed when we carry
+  wire s0_ncl_req_dec = s0_clreq_act | (~s0_ncl_req_zero & i_rst_end); // decrement the number of requests needed when a valid request is accepted
   wire s0_ncl_req_zero;
+  wire s0_ncl_zero;
 
   localparam [ncl_width-1:0] xncl=ncl; // avoid width warning
   localparam [ncl_width-1:0] ncl0 = 0;
@@ -169,8 +166,27 @@ module l1_stream_ptr #
       .o_zero     (s0_ncl_req_zero)
   );
 
-  assign o_clreq_v = ~s0_ncl_req_zero;
+  assign o_clreq_v = ~s0_ncl_req_zero & ~i_rst_end;
   assign o_d = {s0_clid, s0_clofs};
-  //assign i_rst_r = (s0_ncl == xncl);  // only accept a reset when we are in a clean state // TODO might want to keep track of end pointer for each stream as well. Or have a special condition. Option could be that L2 always responds, even when it is gibberish and read past the end of the valid address range. Have to think more about this case. First test what happens when you reset the stream, read some stuff and reset again for the next job.
+  // TODO might want to keep track of end pointer for each stream as well. Or have a special condition. Option could be that L2 always responds, even when it is gibberish and read past the end of the valid address range. Have to think more about this case.
+
+
+
+  // TODO: end of stream per read port
+  // Test with reading final line of a stream.
+  // out_of_bounds = are we reading out of bounds?
+  // That happens when the stream has ended & there is only 1 valid line left & carry bit high
+
+  // end of stream per read port implications:
+  // do not issue a read addr to L1 -> that port is not valid.
+  // therefor will not return any data, is that okay for the AFU?
+  // in following cycles, global signal per stream will indicate that this stream has ended.
+
+  // Test signal, should be per read port basis.
+  wire out_of_bounds = i_rst_end & (s0_ncl == 1) & s0_clofs_carry;
+  // i_rst_end can be put into each read port, select using normal MUX
+  // ncl should be put into read port
+  // s0_clofs_carry can be done using internal signal in rd_port; o_addr_ptr[3] = o_addr_ptr[clofs_width]
+  assign o_single_v = (s0_ncl == 1);
 
 endmodule // l1_stream_ptr

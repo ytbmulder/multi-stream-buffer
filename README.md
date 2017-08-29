@@ -19,12 +19,12 @@ chmod+x ./tools/sim.sh
 Also make sure that the path to the base library, which was installed earlier, is set correctly in `sim.sh`. This is done with the `BASE` parameter.
 
 ## Simulation
-First decide which module you want to simulate and change the `TOP` variable in the `sim.sh` script accordingly.
+The module to be simulated (usually a testbench) is given as an argument to the `sim.sh` script.
 
 To start the simulation, execute the following command from your preferred shell.
 ```
 cd tools
-./sim.sh
+./sim.sh <MODULE NAME>
 ```
 The source code is compiled and gtkwave is started with the corresponding wave configuration file.
 

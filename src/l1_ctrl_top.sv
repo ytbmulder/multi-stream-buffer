@@ -18,10 +18,12 @@ module l1_ctrl_top #
     input  [nstrms-1:0]             i_rst_v,
     output [nstrms-1:0]             i_rst_r,
     input  [nstrms*clid_width-1:0]  i_rst_ea_b,
+    input  [nstrms-1:0]             i_rst_end,
 
     // FUNCTIONAL STREAM RESET OUTPUT INTERFACE
-    output [nstrms-1:0]             o_rst_v,
+    output [nstrms-1:0]             o_rst_v, // TODO: if this is high, should indicate that a stream has ended and that it is safe to reset. check that this is true! instead of having both a o_rst_v and a o_rst_end signal.
     input  [nstrms-1:0]             o_rst_r,
+    // TODO: o_rst_end per stream. add agate in l1_stream_ptr.
 
     // AFU INTERFACE
     input  [nports-1:0]             i_rd_v,
@@ -48,15 +50,12 @@ module l1_ctrl_top #
     wire [nports*nstrms-1:0] s1_rd_v, s1_rd_r;
 
     // INPUT READ REGISTER AND FUNCTIONAL RESET CHECK
-    wire [nstrms-1:0] o_tmp;
-
     wire [nports-1:0] s1_v, s1_r;
     wire [nports*sid_width-1:0] s1_sid;
     // TODO: move this inside the l1_rd_port module.
     genvar d;
     generate
       for(d=0; d<nports; d=d+1) begin : GEN_INIT
-        wire ts1_v, ts1_r;
         base_areg # (
             .lbl(3'b110),
             .width(sid_width)
@@ -65,25 +64,18 @@ module l1_ctrl_top #
             .i_v(i_rd_v[d]),
             .i_r(i_rd_r[d]),
             .i_d(i_rd_sid[(d+1)*sid_width-1:d*sid_width]),
-            .o_v(ts1_v),
-            .o_r(ts1_r),
+            .o_v(s1_v[d]), //ts1_v),
+            .o_r(s1_r[d]), //ts1_r),
             .o_d(s1_sid[(d+1)*sid_width-1:d*sid_width])
-        );
-
-        // Only accept a read when requested stream has been reset.
-        wire s0_rd_en = o_tmp[s1_sid[(d+1)*sid_width-1:d*sid_width]]; // TODO: replace with MUX module
-        base_agate # (.width(1)) is0_rd_agate (
-          .i_v      (ts1_v),
-          .i_r      (ts1_r),
-          .o_v      (s1_v[d]),
-          .o_r      (s1_r[d]),
-          .en       (s0_rd_en)
         );
       end
     endgenerate
 
     // global read port act signal
     wire [nports-1:0] s0_rd_acts;
+    wire [nstrms-1:0] o_single_v;
+
+    wire [nstrms-1:0] l1_end;
 
     // Compare input stream ids.
     // - send which streams are used (one-hot) to l1_stream_ptr modules.
@@ -98,8 +90,11 @@ module l1_ctrl_top #
                 .portid(i),
                 .ptr_width(ptr_width)
             ) iport (
+                .l1_end             (l1_end),
+                .i_single_v         (o_single_v),
                 .clk                (clk),
                 .reset              (reset),
+                .i_rst_end          (i_rst_end),
                 .i_rd_v             (s1_v[i]),
                 .i_rd_r             (s1_r[i]),
                 .i_rd_sid           (s1_sid[(i+1)*sid_width-1:i*sid_width]),
@@ -160,11 +155,13 @@ module l1_ctrl_top #
             l1_stream_ptr # (
                 .nports(nports),.ncl(ncl),.cl_size(cl_size)
             ) i_stream_ptr (
-                .o_tmp(o_tmp[j]),
+                .o_single_v(o_single_v[j]),
                 .clk(clk), .reset(reset),
                 .i_rst_v(s1_rst_v[j]),.i_rst_r(s1_rst_r[j]),        // Initialization interface.
                 .i_rst_ea_b(s1_rst_ea_b[(j+1)*clid_width-1:j*clid_width]),
+                .i_rst_end(i_rst_end[j]),
                 .o_rst_v(o_rst_v[j]),.o_rst_r(o_rst_r[j]),
+                .o_rst_end(l1_end[j]),
                 .i_rd_v(s1_rd_xpose_v[(j+1)*nports-1:j*nports]),    // Valid signals for this stream.
                 .i_rd_r(s1_rd_xpose_r[(j+1)*nports-1:j*nports]),    // Ready signals for this stream.
                 .o_d(s1_ptrs[(j+1)*ptr_width-1:j*ptr_width]),       // Outputs current (not updated) pointer.
