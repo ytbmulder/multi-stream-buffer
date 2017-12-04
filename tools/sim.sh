@@ -21,7 +21,9 @@ export TOP=$1
 # - check if iverilog, vvp and gtkwave are installed
 # - set variables for GTKPATH accordingly.
 # - decide on GTKPATH variable here since we already check the OS here.
-#TODO: test if sim.sh and todo.sh are executable. If not, run chmod +x.
+#TODO: write setup script which checks if sim.sh and todo.sh are executable. If not, run chmod +x. It also should set the source file locations and that of the base library.
+#TODO: reload VCD file:
+# https://stackoverflow.com/questions/45063374/reload-vcd-file-in-gtkwave-from-command-line?noredirect=1#comment77113961_45063374
 
 # Locations of the (System)Verilog source files.
 export BASE=../../base
@@ -41,7 +43,7 @@ echo "TOP = $TOP"
 
 #TODO: add -Wall to display all warnings. timescale as well, but i dont use that.
 #TODO: use lxt format which is faster
-#TODO: for uram/bram sims, ifdef XILINX use their module, otherwise use behav model.
+#TODO: for uram/bram sims, ifdef XILINX use their module, otherwise use behav model. So be able to pass iverilog macros as a command line option with a switch using getopts.
 iverilog -DVCD -Wall -o $WORK/$TOP.out -s $TOP $BASE/*.sv $SRC/*.sv $TB/*.sv
 vvp $WORK/$TOP.out
 mv $TOP.vcd $WORK/$TOP.vcd # VCD file is dumped in same directory as this script. Move it to the work folder.
@@ -73,7 +75,11 @@ else
 	#if [ ! test -f $WORK/$TOP.vcd ] && [ ! test -f $SIM/$TOP.gtkw ] ; then
 		# Start gtkwave with the vcd and gtkw files.
 		$GTKPATH $WORK/$TOP.vcd $SIM/$TOP.gtkw &
-	#else
+
+    #TODO: automatic reload waveform for Linux:
+    #gconftool-2 --type string --set /com.geda.gtkwave/0/reload 0
+
+  #else
 	#	echo "$SERVICE input files are not found."
 	#	exit 1
 	#fi
