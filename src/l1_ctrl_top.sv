@@ -14,7 +14,7 @@ module l1_ctrl_top #
   input                           clk,
   input                           reset,
 
-  // FUNCTIONAL STREAM RESET OUTPUT INTERFACE
+  // FUNCTIONAL STREAM RESET INPUT INTERFACE
   input  [nstrms-1:0]             i_rst_v,
   output [nstrms-1:0]             i_rst_r,
   input  [nstrms*clid_width-1:0]  i_rst_ea_b,

@@ -178,6 +178,6 @@ module l2_stream_ptr #
   assign i_rsp_r = 1'b1; // This module is always ready to accept a response.
 
   // Real end of stream valid signal. No outstanding reqs nor valid lines available.
-  wire o_rst_end = s0_en_rst;
+  assign o_rst_end = s0_en_rst;
 
 endmodule // l2_stream_ptr

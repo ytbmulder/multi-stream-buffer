@@ -108,6 +108,7 @@ module apl_top #
     .i_rst_v        (s2_rst_v),
     .i_rst_r        (s2_rst_r),
     .i_rst_ea_b     (s2_rst_ea_b),
+    .i_rst_end      (),
     .o_rst_v        (o_rst_v),
     .o_rst_r        (o_rst_r),
     .i_rd_v         (i_rd_v),

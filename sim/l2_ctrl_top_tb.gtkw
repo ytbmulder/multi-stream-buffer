@@ -1,22 +1,22 @@
 [*]
 [*] GTKWave Analyzer v3.3.82 (w)1999-2017 BSI
-[*] Thu Aug 24 15:27:38 2017
+[*] Thu Oct 26 21:35:49 2017
 [*]
 [dumpfile] "/Users/ytbmulder/Google Drive/Thesis/Verilog/stream-cache/work/l2_ctrl_top_tb.vcd"
-[dumpfile_mtime] "Thu Aug 24 15:27:05 2017"
-[dumpfile_size] 3559416
+[dumpfile_mtime] "Wed Oct 25 15:54:50 2017"
+[dumpfile_size] 3563179
 [savefile] "/Users/ytbmulder/Google Drive/Thesis/Verilog/stream-cache/sim/l2_ctrl_top_tb.gtkw"
-[timestart] 102
+[timestart] 91
 [size] 1440 852
 [pos] -1 -1
-*-4.000000 124 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-5.000000 136 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] l2_ctrl_top_tb.
 [treeopen] l2_ctrl_top_tb.IDUT.
 [treeopen] l2_ctrl_top_tb.IDUT.GEN_PTR[1].
 [treeopen] l2_ctrl_top_tb.IDUT.GEN_PTR[22].
 [treeopen] l2_ctrl_top_tb.IDUT.GEN_PTR[60].
 [sst_width] 208
-[signals_width] 315
+[signals_width] 319
 [sst_expanded] 1
 [sst_vpaned_height] 257
 @28
@@ -36,6 +36,8 @@ l2_ctrl_top_tb.IDUT.i_rst_ea_e[63:0]
 l2_ctrl_top_tb.IDUT.o_rst_v[63:0]
 l2_ctrl_top_tb.IDUT.o_rst_r[63:0]
 l2_ctrl_top_tb.IDUT.o_rst_ea_b[255:0]
+@23
+l2_ctrl_top_tb.IDUT.o_rst_end[63:0]
 @200
 -INPUT READ
 @22
