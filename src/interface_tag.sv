@@ -60,6 +60,7 @@ module interface_tag #
 
   // parse request input interface
   wire s0_req_v = i_req_v;
+  wire s0_req_r;
   wire i_req_r = s0_req_r;
   wire [nstrms_width-1:0] s0_req_sid = i_req_sid;
   wire [addr_width-1:0] s0_req_ea = i_req_ea;
@@ -85,7 +86,7 @@ module interface_tag #
 
   wire s1a_req_v, s1a_req_r;
   wire ena = s1_res_o_v; //TODO: add to this enable signal; & ~ in reset state
-  base_agate # (.width()) is1_reqgate (
+  base_agate # (.width(1)) is1_reqgate (
     .i_v (s1_req_v),
     .i_r (s1_req_r),
     .o_v (s1a_req_v),
@@ -134,6 +135,7 @@ module interface_tag #
 
   // respsonse input interface
   wire s0_rsp_v = i_rsp_v;
+  wire s0_rsp_r;
   wire i_rsp_r = s0_rsp_r;
   wire [tag_width-1:0]  s0_rsp_tag  = i_rsp_tag;
   wire [data_width-1:0] s0_rsp_data = i_rsp_data;
@@ -160,7 +162,7 @@ module interface_tag #
   // SRAM
   localparam sram_width = nstrms_width+l2_ncl_width;
   wire s1_comb_act = s1_comb_v & s1_comb_r;
-  wire [sram_width-1:0] s1_sram_wd = {s1_req_sid, s1_req_ea[l2_ncl_width-1:0]};
+  wire [sram_width-1:0] s1_sram_wd = {s1_req_sid, s1_req_ea[l2_ncl_width-1:0]}; // TODO: range of s1_req_ea is incorrect. See l2_stream_ptr for the correct range.
   wire s2_rsp_v;
   wire s2_rsp_r;
   wire [tag_width-1:0] s2_rsp_tag;
@@ -169,7 +171,7 @@ module interface_tag #
 
   base_alatch_oe # (
     .width     (0),
-    .del_width (data_width+tag_width)
+    .width (data_width+tag_width)
     ) is1_alatch_oe (
     .clk   (clk),
     .reset (reset),
@@ -186,12 +188,13 @@ module interface_tag #
   wire qi_v, qi_r;
   wire [tag_width-1:0] qi_d;
   base_initsm#(.LOG_COUNT(tag_width)) ism (
-    .clk(clk),.reset(reset),.dout_r(qi_r),.dout_v(qi_v),.dout_d(qi_d));
+    .clk(clk),.reset(reset),.dout_r(qi_r),.dout_v(qi_v),.dout_d(qi_d),.o_zero());
 
   // input data for primux
   wire [tag_width+sram_width-1:0] initsm_d = {qi_d, {sram_width{1'b0}}}; //wa, wd
   wire [tag_width+sram_width-1:0] res_d = {s1_res_o_tag, s1_sram_wd}; //wa, wd
 
+  // TODO: replace primux with mux and use .o_zero from initsm as mux select signal.
   wire s1_v;
   wire s1_r = 1'b1;
   wire act = s1_r & s1_v;
