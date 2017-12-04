@@ -13,8 +13,8 @@
 #export TOP=l2_ptr_st_tb
 #export TOP=l2_stream_ptr_tb
 #export TOP=l2_ctrl_top_tb
-export TOP=apl_top_tb
-#export TOP=interface_tag_tb
+#export TOP=apl_top_tb
+export TOP=interface_tag_tb
 
 # Script terminates after the first non-zero exit code.
 set -euo pipefail

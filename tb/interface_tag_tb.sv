@@ -148,6 +148,9 @@ module interface_tag_tb;
         i_rsp_data <= 0;
         #102;
 
+        // NOTE: RESET TEST
+        #8;
+
         // request ea 2 from sid 1
         i_req_v    <= 1;
         i_req_sid  <= 1;
@@ -168,6 +171,22 @@ module interface_tag_tb;
         i_req_v    <= 1;
         i_req_sid  <= 1;
         i_req_ea   <= 64'h0000000000000004;
+        o_rsp_r    <= 1;
+        i_rsp_data <= 0;
+        #4;
+
+        // request ea 5 from sid 1
+        i_req_v    <= 1;
+        i_req_sid  <= 1;
+        i_req_ea   <= 64'h0000000000000005;
+        o_rsp_r    <= 1;
+        i_rsp_data <= 0;
+        #4;
+
+        // request ea 6 from sid 1
+        i_req_v    <= 1;
+        i_req_sid  <= 1;
+        i_req_ea   <= 64'h0000000000000006;
         o_rsp_r    <= 1;
         i_rsp_data <= 0;
         #4;
