@@ -1,40 +1,71 @@
 [*]
-[*] GTKWave Analyzer v3.3.79 (w)1999-2017 BSI
-[*] Tue Jul 18 20:24:39 2017
+[*] GTKWave Analyzer v3.3.82 (w)1999-2017 BSI
+[*] Thu Aug 24 15:04:35 2017
 [*]
-[dumpfile] "/Users/ytbmulder/Google Drive/Thesis/Verilog/stream-cache/work/l2_stream_control_tb.vcd"
-[dumpfile_mtime] "Tue Jul 18 20:20:14 2017"
-[dumpfile_size] 54483
-[savefile] "/Users/ytbmulder/Google Drive/Thesis/Verilog/stream-cache/sim/l2_stream_control_tb.gtkw"
+[dumpfile] "/Users/ytbmulder/Google Drive/Thesis/Verilog/stream-cache/work/l2_stream_ptr_tb.vcd"
+[dumpfile_mtime] "Thu Aug 24 14:59:27 2017"
+[dumpfile_size] 209809
+[savefile] "/Users/ytbmulder/Google Drive/Thesis/Verilog/stream-cache/sim/l2_stream_ptr_tb.gtkw"
 [timestart] 95
-[size] 1920 1036
+[size] 1440 852
 [pos] -1 -1
-*-2.000000 112 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
-[treeopen] l2_stream_control_tb.
-[treeopen] l2_stream_control_tb.IDUT.
+*-4.000000 112 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] l2_stream_ptr_tb.
+[treeopen] l2_stream_ptr_tb.IDUT.
 [sst_width] 193
-[signals_width] 159
+[signals_width] 322
 [sst_expanded] 1
-[sst_vpaned_height] 322
+[sst_vpaned_height] 257
 @28
-l2_stream_control_tb.IDUT.clk
-l2_stream_control_tb.IDUT.reset
-l2_stream_control_tb.IDUT.i_rst_v
-l2_stream_control_tb.IDUT.i_rst_r
-l2_stream_control_tb.IDUT.i_rd_v
-l2_stream_control_tb.IDUT.i_rd_r
-l2_stream_control_tb.IDUT.o_addr_v
-l2_stream_control_tb.IDUT.o_addr_r
+l2_stream_ptr_tb.IDUT.clk
+l2_stream_ptr_tb.IDUT.reset
+@200
+-INPUT RESET
+@28
+l2_stream_ptr_tb.IDUT.i_rst_v
+l2_stream_ptr_tb.IDUT.i_rst_r
 @24
-l2_stream_control_tb.IDUT.o_addr_ptr[7:0]
+l2_stream_ptr_tb.IDUT.i_rst_ea_b[63:0]
+l2_stream_ptr_tb.IDUT.i_rst_ea_e[63:0]
+@200
+-OUTPUT RESET
 @28
-l2_stream_control_tb.IDUT.o_req_v
-l2_stream_control_tb.IDUT.o_req_r
-l2_stream_control_tb.IDUT.i_rsp_v
-l2_stream_control_tb.IDUT.i_rsp_r
+l2_stream_ptr_tb.IDUT.o_rst_v
+l2_stream_ptr_tb.IDUT.o_rst_r
+@24
+l2_stream_ptr_tb.IDUT.o_rst_ea_b[3:0]
+@28
+l2_stream_ptr_tb.IDUT.o_rst_end
+@200
+-INPUT READ
+@28
+l2_stream_ptr_tb.IDUT.i_rd_v
+l2_stream_ptr_tb.IDUT.i_rd_r
+@200
+-OUTPUT ADDRESS
+@28
+l2_stream_ptr_tb.IDUT.o_addr_v
+l2_stream_ptr_tb.IDUT.o_addr_r
+@24
+l2_stream_ptr_tb.IDUT.o_addr_ptr[7:0]
+@200
+-OUTPUT REQ
+@28
+l2_stream_ptr_tb.IDUT.o_req_v
+l2_stream_ptr_tb.IDUT.o_req_r
+@24
+l2_stream_ptr_tb.IDUT.o_req_ea[63:0]
+@200
+-INPUT RSP
+@28
+l2_stream_ptr_tb.IDUT.i_rsp_v
+l2_stream_ptr_tb.IDUT.i_rsp_r
 @200
 -INTERNAL
 @24
-l2_stream_control_tb.IDUT.is0_ncl_valid_incdec.o_cnt[0:8]
+l2_stream_ptr_tb.IDUT.s0_ncl_valid[8:0]
+l2_stream_ptr_tb.IDUT.s0_ncl_req[8:0]
+@28
+l2_stream_ptr_tb.IDUT.s0_strm_end
 [pattern_trace] 1
 [pattern_trace] 0

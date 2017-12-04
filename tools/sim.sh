@@ -7,27 +7,23 @@
 # - icarus-verilog 10.1.1
 # - gtkwave 3.3.82
 
-# Define top level module name.
-#export TOP=rd_ctrl_top_tb
-#export TOP=l2_merge_tb
-#export TOP=l2_ptr_st_tb
-#export TOP=l2_stream_ptr_tb
-#export TOP=l2_ctrl_top_tb
-#export TOP=apl_top_tb
-export TOP=interface_tag_tb
-
 # Script terminates after the first non-zero exit code.
 set -euo pipefail
 
-#TODO: set the correct path (../sim/) for .gtkw files when directly saved instead of saved as.
+# Define top level module name as command line argument.
+export TOP=$1
 
-#TODO: test if Swith.pm is installed on host machine - invoking gtkwave from bash script needs to run perl script within gtkwave.app on OSX according to gtkwave manual. however this gave an error with perl since perl could not locate Switch.pm in @INC. run 'sudo cpan -f Switch' to install and then calling gtkwave works from command line.
+#TODO: set the correct path (../sim/) for .gtkw files when directly saved instead of saved as.
+#TODO: make TOP variable an input from the command line using getopts.
+#TODO: test if Swith.pm is installed on host machine - invoking gtkwave from bash script needs to run perl script within gtkwave.app on macOS according to gtkwave manual. however this gave an error with perl since perl could not locate Switch.pm in @INC. run 'sudo cpan -f Switch' to install and then calling gtkwave works from command line.
 #TODO: test if iverilog and gtkwave are installed
 # - check which operating system is used.
 # - check if iverilog, vvp and gtkwave are installed
 # - set variables for GTKPATH accordingly.
 # - decide on GTKPATH variable here since we already check the OS here.
-#TODO: test if sim.sh and todo.sh are executable. If not, run chmod +x.
+#TODO: write setup script which checks if sim.sh and todo.sh are executable. If not, run chmod +x. It also should set the source file locations and that of the base library.
+#TODO: reload VCD file:
+# https://stackoverflow.com/questions/45063374/reload-vcd-file-in-gtkwave-from-command-line?noredirect=1#comment77113961_45063374
 
 # Locations of the (System)Verilog source files.
 export BASE=../../base
@@ -42,10 +38,13 @@ if [ ! -d "$WORK" ]; then
 	mkdir $WORK
 fi
 
+# Echo the top level entity.
+echo "TOP = $TOP"
+
 #TODO: add -Wall to display all warnings. timescale as well, but i dont use that.
 #TODO: use lxt format which is faster
-#TODO: for uram/bram sims, ifdef XILINX use their module, otherwise use behav model.
-iverilog -DVCD -o $WORK/$TOP.out -s $TOP $BASE/*.sv $SRC/*.sv $TB/*.sv
+#TODO: for uram/bram sims, ifdef XILINX use their module, otherwise use behav model. So be able to pass iverilog macros as a command line option with a switch using getopts.
+iverilog -DVCD -Wall -o $WORK/$TOP.out -s $TOP $BASE/*.sv $SRC/*.sv $TB/*.sv
 vvp $WORK/$TOP.out
 mv $TOP.vcd $WORK/$TOP.vcd # VCD file is dumped in same directory as this script. Move it to the work folder.
 
@@ -76,7 +75,11 @@ else
 	#if [ ! test -f $WORK/$TOP.vcd ] && [ ! test -f $SIM/$TOP.gtkw ] ; then
 		# Start gtkwave with the vcd and gtkw files.
 		$GTKPATH $WORK/$TOP.vcd $SIM/$TOP.gtkw &
-	#else
+
+    #TODO: automatic reload waveform for Linux:
+    #gconftool-2 --type string --set /com.geda.gtkwave/0/reload 0
+
+  #else
 	#	echo "$SERVICE input files are not found."
 	#	exit 1
 	#fi
