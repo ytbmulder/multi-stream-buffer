@@ -1,19 +1,24 @@
 module bram_top_tb;
 
-  parameter   DATA_WIDTH              = 8*8;             // 8 bytes per element
+  parameter   DATA_WIDTH              = 8*8;              // 8 bytes per element
   parameter   RAM_DEPTH               = 512;              // double pump -> 256 16B entries
   parameter   ADDR_WIDTH              = $clog2(RAM_DEPTH);
-  parameter   WAYS                    = 8;                // 8x 36K BRAM instances.
+  parameter   WAYS                    = 8;                // Number of BRAMs per cache line.
   parameter   WAYS_WIDTH              = $clog2(WAYS);
-//parameter   channels                = 2;
-//parameter   channels_width          = $clog2(channels);
+  parameter   channels                = 2;                // Number of L2 write channels.
+  parameter   channels_width          = $clog2(channels);
+  parameter   nstrms                  = 32;               // Total number of streams.
+  parameter   l1_nstrms               = nstrms/channels;  // Number of streams per channel.
+  parameter   l1_nstrms_width         = $clog2(l1_nstrms);
+  parameter   l1_ncl                  = 16;               // Number of cache lines per stream.
+  parameter   l1_ncl_width            = $clog2(l1_ncl);
 
 
 
   // TODO: move this function to separate simulation library file.
   // TODO: put it within a module with parameters.
   // Unsigned random number generator.
-  localparam PRODUCT = WAYS*DATA_WIDTH;
+  localparam PRODUCT = channels*WAYS*DATA_WIDTH;
   function [PRODUCT-1:0] urandom;
     input [31:0] seed; // $urandom requires a 32 bit seed.
 
@@ -26,9 +31,10 @@ module bram_top_tb;
 
   wire [31:0] seed = 4'b1011;
 
-  initial begin
-    $display( "urandom=%b", urandom(seed) );
-  end
+  // Debug urandom function.
+  //initial begin
+  //  $display( "urandom=%b", urandom(seed) );
+  //end
 
 
 
@@ -82,9 +88,9 @@ module bram_top_tb;
   // Input read interface.
   reg   i_v;
   wire  i_r;
-//reg   [WAYS_WIDTH+ADDR_WIDTH-2:0] i_ra;
-  reg  [$clog2(16)-1:0]             i_ra_st;
-  reg  [$clog2(16)-1:0]             i_ra_cl;
+  reg  [channels_width-1:0]         i_ra_ch;
+  reg  [l1_nstrms_width-1:0]       i_ra_st;
+  reg  [l1_ncl_width-1:0]           i_ra_cl;
   reg  [WAYS_WIDTH-1:0]             i_ra_of;
 
   // Output read interface.
@@ -93,14 +99,11 @@ module bram_top_tb;
   wire  [2*DATA_WIDTH-1:0] o_rd;
 
   // Input write interface.
-  reg  i_we;
-  reg  [ADDR_WIDTH-1:0] i_wa;
-  reg  [WAYS*DATA_WIDTH-1:0] i_wd;
+  reg  [channels-1:0] i_we;
+  reg  [channels*ADDR_WIDTH-1:0] i_wa;
+  reg  [channels*WAYS*DATA_WIDTH-1:0] i_wd;
 
   // DUT
-  //sdp_test_rv IDUT ( // credit interface
-  //bram_test_rv_oe IDUT ( // 128 bit output
-  //bram_test_rv_oe_2x IDUT ( // 64 bit output
   bram_top IDUT (
     .clk1x (clk1x),
     .clk2x (clk2x),
@@ -108,7 +111,7 @@ module bram_top_tb;
 
     .i_v  (i_v),
     .i_r  (i_r),
-    //.i_ra (i_ra),
+    .i_ra_ch (i_ra_ch),
     .i_ra_st (i_ra_st),
     .i_ra_cl (i_ra_cl),
     .i_ra_of (i_ra_of),
@@ -126,7 +129,7 @@ module bram_top_tb;
   initial begin
     // Initially everything is set to zero.
     i_v <= 0;
-    //i_ra <= 0;
+    i_ra_ch <= 0;
     i_ra_st <= 0;
     i_ra_cl <= 0;
     i_ra_of <= 0;
@@ -138,7 +141,7 @@ module bram_top_tb;
 
     // Set interfaces to be ready.
     i_v <= 0;
-    //i_ra <= 0;
+    i_ra_ch <= 0;
     i_ra_st <= 0;
     i_ra_cl <= 0;
     i_ra_of <= 0;
@@ -146,49 +149,49 @@ module bram_top_tb;
     i_we <= 0;
     i_wa <= 0;
     i_wd <= 0;
-    #8;
+    #7;
 
 
 
-    // Write 100 to address 40.
+    // Write to address 40 to channel 0.
     i_v <= 0;
-    //i_ra <= 0;
+    i_ra_ch <= 0;
     i_ra_st <= 0;
     i_ra_cl <= 0;
     i_ra_of <= 0;
     o_r <= 1;
     i_we <= 1;
     i_wa <= 9'b000101000;
-    i_wd <= $urandom; //100;
+    i_wd <= $urandom;
     #2;
 
-    // Write 200 to address 41.
+    // Write to address 41 to channel 0.
     i_v <= 0;
-    //i_ra <= 0;
+    i_ra_ch <= 0;
     i_ra_st <= 0;
     i_ra_cl <= 0;
     i_ra_of <= 0;
     o_r <= 1;
     i_we <= 1;
     i_wa <= 9'b000101001;
-    i_wd <= $urandom; //200;
+    i_wd <= $urandom;
     #2;
 
-    // Write 300 to address 50.
+    // Write to address 50 on channel 0.
     i_v <= 0;
-    //i_ra <= 0;
+    i_ra_ch <= 0;
     i_ra_st <= 0;
     i_ra_cl <= 0;
     i_ra_of <= 0;
     o_r <= 1;
     i_we <= 1;
     i_wa <= 9'b001010000;
-    i_wd <= urandom(seed); //300;
+    i_wd <= urandom(seed);
     #2;
 
-    // Write 400 to address 51.
+    // Write 400 to address 51 on channel 0.
     i_v <= 0;
-    //i_ra <= 0;
+    i_ra_ch <= 0;
     i_ra_st <= 0;
     i_ra_cl <= 0;
     i_ra_of <= 0;
@@ -198,11 +201,49 @@ module bram_top_tb;
     i_wd <= 400;
     #2;
 
+    // Write to address 50 on channel 1.
+    i_v <= 0;
+    i_ra_ch <= 0;
+    i_ra_st <= 0;
+    i_ra_cl <= 0;
+    i_ra_of <= 0;
+    o_r <= 1;
+    i_we <= 2'b10;
+    i_wa <= 18'b001010000000000000;
+    i_wd <= urandom(seed-5);
+    #2;
+
+    // Write to address 51 on channel 1.
+    i_v <= 0;
+    i_ra_ch <= 0;
+    i_ra_st <= 0;
+    i_ra_cl <= 0;
+    i_ra_of <= 0;
+    o_r <= 1;
+    i_we <= 2'b10;
+    i_wa <= 18'b001010001000000000;
+    i_wd <= urandom(seed-10);
+    #2;
+
+
+
+    // Rest
+    i_v <= 0;
+    i_ra_ch <= 0;
+    i_ra_st <= 0;
+    i_ra_cl <= 0;
+    i_ra_of <= 0;
+    o_r <= 1;
+    i_we <= 0;
+    i_wa <= 0;
+    i_wd <= 0;
+    #5;
+
 
 
     // Read from address 20.
     i_v <= 1;
-    //i_ra <= 11'b0001 0100 000; //20; // NOTE: Last three bits are for element offset within cache line.
+    i_ra_ch <= 0;
     i_ra_st <= 4'b0001;
     i_ra_cl <= 4'b0100;
     i_ra_of <= 3'b000;
@@ -214,7 +255,7 @@ module bram_top_tb;
 
     // Read from address 40.
     i_v <= 1;
-    //i_ra <= 11'b0010 1000 000; //40;
+    i_ra_ch <= 0;
     i_ra_st <= 4'b0010;
     i_ra_cl <= 4'b1000;
     i_ra_of <= 3'b000;
@@ -226,7 +267,7 @@ module bram_top_tb;
 
     // Read from address 20.
     i_v <= 1;
-    //i_ra <= 11'b00010100000; //20;
+    i_ra_ch <= 0;
     i_ra_st <= 4'b0001;
     i_ra_cl <= 4'b0100;
     i_ra_of <= 3'b000;
@@ -238,7 +279,7 @@ module bram_top_tb;
 
     // Rest
     i_v <= 0;
-    //i_ra <= 0;
+    i_ra_ch <= 0;
     i_ra_st <= 0;
     i_ra_cl <= 0;
     i_ra_of <= 0;
@@ -248,39 +289,26 @@ module bram_top_tb;
     i_wd <= 0;
     #8;
 
-/*
-
-    // Read from address 40.
+    // Read from address 40 on channel 1.
     i_v <= 1;
-    //i_ra <= 11'b00101000000; //40;
+    i_ra_ch <= 1;
     i_ra_st <= 4'b0010;
     i_ra_cl <= 4'b1000;
-    i_ra_of <= 3'b000;
+    i_ra_of <= 3'b111;
     o_r <= 0;
     i_we <= 0;
     i_wa <= 0;
     i_wd <= 0;
     #4;
-    */
-
-/*
-    // TODO: adding this results in reverse reading of this address.
-    // Probably because previous read has extra half cycle, therefore toggle is offset.
-    i_v <= 1;
-    i_ra <= 11'b00010100000; //20;
-    o_r <= 0;
-    i_we <= 0;
-    i_wa <= 0;
-    i_wd <= 0;
-    #4;
-*/
 
 
 
-/*
     // Rest
     i_v <= 0;
-    i_ra <= 0;
+    i_ra_ch <= 0;
+    i_ra_st <= 0;
+    i_ra_cl <= 0;
+    i_ra_of <= 0;
     o_r <= 0;
     i_we <= 0;
     i_wa <= 0;
@@ -289,7 +317,10 @@ module bram_top_tb;
 
     // Rest
     i_v <= 0;
-    i_ra <= 0;
+    i_ra_ch <= 0;
+    i_ra_st <= 0;
+    i_ra_cl <= 0;
+    i_ra_of <= 0;
     o_r <= 1;
     i_we <= 0;
     i_wa <= 0;
@@ -298,7 +329,10 @@ module bram_top_tb;
 
     // Rest
     i_v <= 0;
-    i_ra <= 0;
+    i_ra_ch <= 0;
+    i_ra_st <= 0;
+    i_ra_cl <= 0;
+    i_ra_of <= 0;
     o_r <= 1;
     i_we <= 0;
     i_wa <= 0;
@@ -312,7 +346,10 @@ module bram_top_tb;
 
       // Read from address 20.
       i_v <= 1;
-      i_ra <= 11'b00010100000; //20;
+      i_ra_ch <= 0;
+      i_ra_st <= 4'b0001;
+      i_ra_cl <= 4'b0100;
+      i_ra_of <= 3'b000;
       o_r <= 1;
       i_we <= 0;
       i_wa <= 0;
@@ -321,7 +358,10 @@ module bram_top_tb;
 
       // Read from address 40.
       i_v <= 1;
-      i_ra <= 11'b00101000000; //40;
+      i_ra_ch <= 0;
+      i_ra_st <= 4'b0010;
+      i_ra_cl <= 4'b1000;
+      i_ra_of <= 3'b000;
       o_r <= 1;
       i_we <= 0;
       i_wa <= 0;
@@ -329,13 +369,12 @@ module bram_top_tb;
       #4;
 
     end
-    */
 
 
 
     // Rest
     i_v <= 0;
-    //i_ra <= 0;
+    i_ra_ch <= 0;
     i_ra_st <= 0;
     i_ra_cl <= 0;
     i_ra_of <= 0;
@@ -345,9 +384,9 @@ module bram_top_tb;
     i_wd <= 0;
     #4;
 
-    // Rest - not ready
+    // Rest (- not ready)
     i_v <= 0;
-    //i_ra <= 0;
+    i_ra_ch <= 0;
     i_ra_st <= 0;
     i_ra_cl <= 0;
     i_ra_of <= 0;
@@ -359,7 +398,7 @@ module bram_top_tb;
 
     // Rest
     i_v <= 0;
-    //i_ra <= 0;
+    i_ra_ch <= 0;
     i_ra_st <= 0;
     i_ra_cl <= 0;
     i_ra_of <= 0;
@@ -371,10 +410,9 @@ module bram_top_tb;
 
 
 
-
     // Terminate testbench.
     i_v <= 0;
-    //i_ra <= 0;
+    i_ra_ch <= 0;
     i_ra_st <= 0;
     i_ra_cl <= 0;
     i_ra_of <= 0;
@@ -384,4 +422,4 @@ module bram_top_tb;
     i_wd <= 0;
   end
 
-endmodule // bram_test_tb
+endmodule // bram_top_tb

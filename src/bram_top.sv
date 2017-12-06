@@ -3,10 +3,15 @@ module bram_top #
   parameter   DATA_WIDTH              = 8*8,              // 8 bytes per element
   parameter   RAM_DEPTH               = 512,              // double pump -> 256 16B entries
   parameter   ADDR_WIDTH              = $clog2(RAM_DEPTH),
-  parameter   WAYS                    = 8, // number of BRAMs needed to make a cache line
+  parameter   WAYS                    = 8,                // Number of BRAMs per cache line.
   parameter   WAYS_WIDTH              = $clog2(WAYS),
-//parameter   channels                = 2,
-//parameter   channels_width          = $clog2(channels)
+  parameter   channels                = 2,                // Number of L2 write channels.
+  parameter   channels_width          = $clog2(channels),
+  parameter   nstrms                  = 32,               // Total number of streams.
+  parameter   l1_nstrms               = nstrms/channels,  // Number of streams per channel.
+  parameter   l1_nstrms_width         = $clog2(l1_nstrms),
+  parameter   l1_ncl                  = 16,               // Number of cache lines per stream.
+  parameter   l1_ncl_width            = $clog2(l1_ncl)
 )
 (
   input                               clk1x,
@@ -16,10 +21,9 @@ module bram_top #
   // Input read interface.
   input                               i_v,
   output                              i_r,
-//input  [WAYS_WIDTH+ADDR_WIDTH-2:0]  i_ra, // = read address
-  //input  [channels_width-1:0]         i_ra_ch, // Channel
-  input  [$clog2(16)-1:0]             i_ra_st, // Stream
-  input  [$clog2(16)-1:0]             i_ra_cl, // Cache line
+  input  [channels_width-1:0]         i_ra_ch, // Channel
+  input  [l1_nstrms_width-1:0]        i_ra_st, // Stream
+  input  [l1_ncl_width-1:0]           i_ra_cl, // Cache line
   input  [WAYS_WIDTH-1:0]             i_ra_of, // Offset
 
   // Output read interface.
@@ -28,33 +32,30 @@ module bram_top #
   output [2*DATA_WIDTH-1:0]           o_rd,
 
   // Input write interface.
-  input                               i_we,
-  input  [ADDR_WIDTH-1:0]             i_wa,
-  input  [WAYS*DATA_WIDTH-1:0]        i_wd
+  input  [channels-1:0]               i_we,
+  input  [channels*ADDR_WIDTH-1:0]    i_wa,
+  input  [channels*WAYS*DATA_WIDTH-1:0] i_wd
 );
-
-  wire [WAYS_WIDTH+ADDR_WIDTH-2:0] i_ra = {i_ra_st, i_ra_cl, i_ra_of};
 
   // Input register.
   wire s1_v, s1_r;
-  //wire [WAYS_WIDTH+ADDR_WIDTH-2:0] s1_ra_pre;
-
-  wire [$clog2(16)-1:0] s1_ra_st;
-  wire [$clog2(16)-1:0] s1_ra_cl;
-  wire [WAYS_WIDTH-1:0] s1_ra_of;
+  wire [channels_width-1:0]  s1_ra_ch;
+  wire [l1_nstrms_width-1:0] s1_ra_st;
+  wire [l1_ncl_width-1:0]    s1_ra_cl;
+  wire [WAYS_WIDTH-1:0]      s1_ra_of;
 
   base_areg # (
-    .width  (WAYS_WIDTH+ADDR_WIDTH-1),
+    .width  (channels_width+WAYS_WIDTH+ADDR_WIDTH-1),
     .lbl    (3'b110)
     ) S1_FF (
     .clk    (clk1x),
     .reset  (reset),
     .i_v    (i_v),
     .i_r    (i_r),
-    .i_d    (i_ra),
+    .i_d    ({i_ra_ch, i_ra_st, i_ra_cl, i_ra_of}),
     .o_v    (s1_v),
     .o_r    (s1_r),
-    .o_d    ({s1_ra_st, s1_ra_cl, s1_ra_of}) //(s1_ra_pre)
+    .o_d    ({s1_ra_ch, s1_ra_st, s1_ra_cl, s1_ra_of})
   );
 
   localparam crdts = 6; //TODO: lower results in not being able to handle read bursts.
@@ -72,8 +73,7 @@ module bram_top #
     .o_c (s1_credit)
   );
 
-  //wire s1_act = s1_v & s1_r;
-  wire st_act = st_v & st_r; // BRAM always ready.
+  wire st_act = st_v & st_r;
   wire s1_re = st_act;
 
   // T flip flop
@@ -102,31 +102,54 @@ module bram_top #
     .o_d    ()
   );
 
-
-
   // BRAM primitive instantiation.
-  //wire [WAYS_WIDTH+ADDR_WIDTH-1:0] s1_ra = {s1_ra_pre[WAYS_WIDTH+ADDR_WIDTH-2:WAYS_WIDTH], q, s1_ra_pre[WAYS_WIDTH-1:0]};
   wire [WAYS_WIDTH+ADDR_WIDTH-1:0] s1_ra = {s1_ra_st, s1_ra_cl, q, s1_ra_of}; // q is cl lsb
-  wire [DATA_WIDTH-1:0] s2_rd;
+  wire [channels*DATA_WIDTH-1:0] s2_rd;
 
-  // Contains 16 128B cache lines for 16 streams. Equals one channel.
-  bram_slice # (
-    .DATA_WIDTH (DATA_WIDTH),
-    .RAM_DEPTH  (RAM_DEPTH),
-    .WAYS       (WAYS)
-    ) SLICE (
-    .clk1x      (clk1x),
-    .clk2x      (clk2x),
-    .reset      (reset),
-    .i_we       (i_we),
-    .i_wa       (i_wa),
-    .i_wd       (i_wd),
-    .i_re       (s1_re),
-    .i_ra       (s1_ra),
-    .o_rd       (s2_rd)
+  genvar i;
+  generate
+    for( i = 0; i < channels; i = i + 1 ) begin : GEN_SLICES
+
+      // Contains 16 128B cache lines for 16 streams. Equals one channel.
+      bram_slice # (
+        .DATA_WIDTH (DATA_WIDTH),
+        .RAM_DEPTH  (RAM_DEPTH),
+        .WAYS       (WAYS)
+        ) SLICE (
+        .clk1x      (clk1x),
+        .clk2x      (clk2x),
+        .reset      (reset),
+        .i_we       (i_we[i]),
+        .i_wa       (i_wa[(i+1)*ADDR_WIDTH-1:i*ADDR_WIDTH]),
+        .i_wd       (i_wd[(i+1)*WAYS*DATA_WIDTH-1:i*WAYS*DATA_WIDTH]),
+        .i_re       (s1_re),
+        .i_ra       (s1_ra),
+        .o_rd       (s2_rd[(i+1)*DATA_WIDTH-1:i*DATA_WIDTH])
+      );
+
+    end
+  endgenerate
+
+  // Channel select MUX.
+  wire [channels_width-1:0] s2_sel;
+  base_vlat # (
+    .width  (channels_width)
+    ) CH_VLAT (
+    .clk    (clk1x),
+    .reset  (reset),
+    .din    (s1_ra_ch),
+    .q      (s2_sel)
   );
 
-
+  wire [DATA_WIDTH-1:0] s2a_rd;
+  base_emux_le # (
+    .width (DATA_WIDTH),
+    .ways  (channels)
+    ) CH_MUX (
+    .din   (s2_rd),
+    .sel   (s2_sel),
+    .dout  (s2a_rd)
+  );
 
   // Alignment reigster.
   wire [DATA_WIDTH-1:0] s2b_rd;
@@ -135,11 +158,11 @@ module bram_top #
     ) FF (
     .clk    (clk2x),
     .reset  (reset),
-    .din    (s2_rd),
+    .din    (s2a_rd),
     .q      (s2b_rd)
   );
 
-  wire [2*DATA_WIDTH-1:0] s3_rd = {s2_rd, s2b_rd};
+  wire [2*DATA_WIDTH-1:0] s3_rd = {s2a_rd, s2b_rd};
 
   // Sink
   base_acredit_snk # (
