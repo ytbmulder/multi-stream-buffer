@@ -5,6 +5,8 @@ module bram_top_tb;
   parameter   ADDR_WIDTH              = $clog2(RAM_DEPTH);
   parameter   WAYS                    = 8;                // 8x 36K BRAM instances.
   parameter   WAYS_WIDTH              = $clog2(WAYS);
+//parameter   channels                = 2;
+//parameter   channels_width          = $clog2(channels);
 
 
 
@@ -80,12 +82,15 @@ module bram_top_tb;
   // Input read interface.
   reg   i_v;
   wire  i_r;
-  reg   [WAYS_WIDTH+ADDR_WIDTH-2:0] i_d;
+//reg   [WAYS_WIDTH+ADDR_WIDTH-2:0] i_ra;
+  reg  [$clog2(16)-1:0]             i_ra_st;
+  reg  [$clog2(16)-1:0]             i_ra_cl;
+  reg  [WAYS_WIDTH-1:0]             i_ra_of;
 
   // Output read interface.
   wire  o_v;
   reg   o_r;
-  wire  [2*DATA_WIDTH-1:0] o_d;
+  wire  [2*DATA_WIDTH-1:0] o_rd;
 
   // Input write interface.
   reg  i_we;
@@ -103,11 +108,14 @@ module bram_top_tb;
 
     .i_v  (i_v),
     .i_r  (i_r),
-    .i_d  (i_d),
+    //.i_ra (i_ra),
+    .i_ra_st (i_ra_st),
+    .i_ra_cl (i_ra_cl),
+    .i_ra_of (i_ra_of),
 
     .o_v  (o_v),
     .o_r  (o_r),
-    .o_d  (o_d),
+    .o_rd (o_rd),
 
     .i_we (i_we),
     .i_wa (i_wa),
@@ -118,7 +126,10 @@ module bram_top_tb;
   initial begin
     // Initially everything is set to zero.
     i_v <= 0;
-    i_d <= 0;
+    //i_ra <= 0;
+    i_ra_st <= 0;
+    i_ra_cl <= 0;
+    i_ra_of <= 0;
     o_r <= 0;
     i_we <= 0;
     i_wa <= 0;
@@ -127,7 +138,10 @@ module bram_top_tb;
 
     // Set interfaces to be ready.
     i_v <= 0;
-    i_d <= 0;
+    //i_ra <= 0;
+    i_ra_st <= 0;
+    i_ra_cl <= 0;
+    i_ra_of <= 0;
     o_r <= 1;
     i_we <= 0;
     i_wa <= 0;
@@ -138,7 +152,10 @@ module bram_top_tb;
 
     // Write 100 to address 40.
     i_v <= 0;
-    i_d <= 0;
+    //i_ra <= 0;
+    i_ra_st <= 0;
+    i_ra_cl <= 0;
+    i_ra_of <= 0;
     o_r <= 1;
     i_we <= 1;
     i_wa <= 9'b000101000;
@@ -147,7 +164,10 @@ module bram_top_tb;
 
     // Write 200 to address 41.
     i_v <= 0;
-    i_d <= 0;
+    //i_ra <= 0;
+    i_ra_st <= 0;
+    i_ra_cl <= 0;
+    i_ra_of <= 0;
     o_r <= 1;
     i_we <= 1;
     i_wa <= 9'b000101001;
@@ -156,7 +176,10 @@ module bram_top_tb;
 
     // Write 300 to address 50.
     i_v <= 0;
-    i_d <= 0;
+    //i_ra <= 0;
+    i_ra_st <= 0;
+    i_ra_cl <= 0;
+    i_ra_of <= 0;
     o_r <= 1;
     i_we <= 1;
     i_wa <= 9'b001010000;
@@ -165,7 +188,10 @@ module bram_top_tb;
 
     // Write 400 to address 51.
     i_v <= 0;
-    i_d <= 0;
+    //i_ra <= 0;
+    i_ra_st <= 0;
+    i_ra_cl <= 0;
+    i_ra_of <= 0;
     o_r <= 1;
     i_we <= 1;
     i_wa <= 9'b001010001;
@@ -176,7 +202,10 @@ module bram_top_tb;
 
     // Read from address 20.
     i_v <= 1;
-    i_d <= 11'b00010100000; //20; // NOTE: Last three bits are for element offset within cache line.
+    //i_ra <= 11'b0001 0100 000; //20; // NOTE: Last three bits are for element offset within cache line.
+    i_ra_st <= 4'b0001;
+    i_ra_cl <= 4'b0100;
+    i_ra_of <= 3'b000;
     o_r <= 1;
     i_we <= 0;
     i_wa <= 0;
@@ -185,7 +214,10 @@ module bram_top_tb;
 
     // Read from address 40.
     i_v <= 1;
-    i_d <= 11'b00101000000; //40;
+    //i_ra <= 11'b0010 1000 000; //40;
+    i_ra_st <= 4'b0010;
+    i_ra_cl <= 4'b1000;
+    i_ra_of <= 3'b000;
     o_r <= 1;
     i_we <= 0;
     i_wa <= 0;
@@ -194,7 +226,10 @@ module bram_top_tb;
 
     // Read from address 20.
     i_v <= 1;
-    i_d <= 11'b00010100000; //20;
+    //i_ra <= 11'b00010100000; //20;
+    i_ra_st <= 4'b0001;
+    i_ra_cl <= 4'b0100;
+    i_ra_of <= 3'b000;
     o_r <= 1;
     i_we <= 0;
     i_wa <= 0;
@@ -203,27 +238,36 @@ module bram_top_tb;
 
     // Rest
     i_v <= 0;
-    i_d <= 0;
+    //i_ra <= 0;
+    i_ra_st <= 0;
+    i_ra_cl <= 0;
+    i_ra_of <= 0;
     o_r <= 0;
     i_we <= 0;
     i_wa <= 0;
     i_wd <= 0;
     #8;
 
+/*
+
     // Read from address 40.
     i_v <= 1;
-    i_d <= 11'b00101000000; //40;
+    //i_ra <= 11'b00101000000; //40;
+    i_ra_st <= 4'b0010;
+    i_ra_cl <= 4'b1000;
+    i_ra_of <= 3'b000;
     o_r <= 0;
     i_we <= 0;
     i_wa <= 0;
     i_wd <= 0;
     #4;
+    */
 
 /*
     // TODO: adding this results in reverse reading of this address.
     // Probably because previous read has extra half cycle, therefore toggle is offset.
     i_v <= 1;
-    i_d <= 11'b00010100000; //20;
+    i_ra <= 11'b00010100000; //20;
     o_r <= 0;
     i_we <= 0;
     i_wa <= 0;
@@ -233,9 +277,10 @@ module bram_top_tb;
 
 
 
+/*
     // Rest
     i_v <= 0;
-    i_d <= 0;
+    i_ra <= 0;
     o_r <= 0;
     i_we <= 0;
     i_wa <= 0;
@@ -244,7 +289,7 @@ module bram_top_tb;
 
     // Rest
     i_v <= 0;
-    i_d <= 0;
+    i_ra <= 0;
     o_r <= 1;
     i_we <= 0;
     i_wa <= 0;
@@ -253,7 +298,7 @@ module bram_top_tb;
 
     // Rest
     i_v <= 0;
-    i_d <= 0;
+    i_ra <= 0;
     o_r <= 1;
     i_we <= 0;
     i_wa <= 0;
@@ -267,7 +312,7 @@ module bram_top_tb;
 
       // Read from address 20.
       i_v <= 1;
-      i_d <= 11'b00010100000; //20;
+      i_ra <= 11'b00010100000; //20;
       o_r <= 1;
       i_we <= 0;
       i_wa <= 0;
@@ -276,7 +321,7 @@ module bram_top_tb;
 
       // Read from address 40.
       i_v <= 1;
-      i_d <= 11'b00101000000; //40;
+      i_ra <= 11'b00101000000; //40;
       o_r <= 1;
       i_we <= 0;
       i_wa <= 0;
@@ -284,12 +329,16 @@ module bram_top_tb;
       #4;
 
     end
+    */
 
 
 
     // Rest
     i_v <= 0;
-    i_d <= 0;
+    //i_ra <= 0;
+    i_ra_st <= 0;
+    i_ra_cl <= 0;
+    i_ra_of <= 0;
     o_r <= 1;
     i_we <= 0;
     i_wa <= 0;
@@ -298,7 +347,10 @@ module bram_top_tb;
 
     // Rest - not ready
     i_v <= 0;
-    i_d <= 0;
+    //i_ra <= 0;
+    i_ra_st <= 0;
+    i_ra_cl <= 0;
+    i_ra_of <= 0;
     o_r <= 1;
     i_we <= 0;
     i_wa <= 0;
@@ -307,7 +359,10 @@ module bram_top_tb;
 
     // Rest
     i_v <= 0;
-    i_d <= 0;
+    //i_ra <= 0;
+    i_ra_st <= 0;
+    i_ra_cl <= 0;
+    i_ra_of <= 0;
     o_r <= 1;
     i_we <= 0;
     i_wa <= 0;
@@ -319,7 +374,10 @@ module bram_top_tb;
 
     // Terminate testbench.
     i_v <= 0;
-    i_d <= 0;
+    //i_ra <= 0;
+    i_ra_st <= 0;
+    i_ra_cl <= 0;
+    i_ra_of <= 0;
     o_r <= 0;
     i_we <= 0;
     i_wa <= 0;
