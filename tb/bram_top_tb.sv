@@ -103,6 +103,24 @@ module bram_top_tb;
   reg  [channels*ADDR_WIDTH-1:0] i_wa;
   reg  [channels*WAYS*DATA_WIDTH-1:0] i_wd;
 
+  // Functional verification.
+  `ifdef VCD
+    always begin
+      if( i_we[0] == 1'b1 ) begin
+        $display("t=%d, i_we = %b, i_wd = %h", $time-1, i_we, i_wd[8*DATA_WIDTH-1:7*DATA_WIDTH]);
+      end
+
+      if( i_we[1] == 1'b1 ) begin
+        $display("t=%d, i_we = %b, i_wd = %h", $time-1, i_we, i_wd[2*8*DATA_WIDTH-1:(2*7+1)*DATA_WIDTH]);
+      end
+
+      if( (o_v && o_r) == 1'b1 ) begin
+        $display("t = %d, o_act = %b, o_rd = %h", $time-4, (o_v && o_r), o_rd);
+      end
+      #2;
+    end
+  `endif
+
   // DUT
   bram_top IDUT (
     .clk1x (clk1x),
