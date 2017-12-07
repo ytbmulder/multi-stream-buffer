@@ -79,6 +79,7 @@ module l1_ctrl_top_tb;
   wire [nstrms-1:0] s0_req_r;
   wire [nstrms-1:0] s0_rsp_v;
 
+  // TODO: add reset interfaces since I removed that from the *_top.sv file.
   // REGISTER INPUTS
   base_delay # (
     .width(nstrms+nstrms*clid_width+nstrms+nstrms+nports+nports*sid_width+nports),
@@ -146,7 +147,6 @@ module l1_ctrl_top_tb;
     #8;
 
     // TODO: test what happens if you start reading before all 16 cache lines have been received from L2.
-    // TODO: test i_rd_v = 00000101 as in apl_top_tb
     // TODO: test if new cache line from L2 is requested immediately when a boundary is crossed. should request when 7th element is requested.
     // TODO: is the correct o_addr_ptr still calculated if not the o_addr_r is not ready, but the rd_port o_req_r signal is not ready.
 

@@ -10,7 +10,7 @@ module l1_stream_ptr #
   parameter width                     = clid_width + clofs_width
 )
 (
-  output o_single_v,
+  output                    o_single_v,
 
   // Global signals.
   input                     clk,
@@ -24,17 +24,15 @@ module l1_stream_ptr #
 
   output                    o_rst_v,
   input                     o_rst_r,
-  output                    o_rst_end, // TODO: looks like duplicate of o_rst_v, but comes from a reg instead of o_rst_v.
+  output                    o_rst_end,
 
   // read input - high if read stream_id is equal to the stream constant.
   input  [nports-1:0]       i_rd_v,
   output [nports-1:0]       i_rd_r,
 
-  // TODO: rename o_d to o_global_ptr
   // output current pointer for individual read port offset calcuation.
-  output [width-1:0]        o_d,        // 7 bits = line + offset
+  output [width-1:0]        o_global_ptr,        // 7 bits = line + offset
 
-  // TODO: rename *_clreq_* to *_req_*
   // output - used for requesting a new cache line from L2.
   output                    o_clreq_v,  // request a new cacheline for this stream
   input                     o_clreq_r,
@@ -98,7 +96,6 @@ module l1_stream_ptr #
       .dout       (s0_inc)  // 4 bits
   );
 
-  // TODO: use base_vlat_en instead of base_vlat like in l2_stream_ptr.
   // Cache line id and offset incrementing.
   wire [clofs_width:0]  s0_clofs_nxt = s0_clofs + s0_inc; // 4 bits because offset = 3 and 1b for carry
   base_vlat # (
@@ -121,7 +118,6 @@ module l1_stream_ptr #
       .q          (s0_clid)
   );
 
-  // TODO: should change this at some point. sim breaks if I remove the i_clrsp_r statement.
   assign i_clrsp_r = 1'b1; // for now, no back pressure is needed on responses
   wire s0_clreq_act = o_clreq_v & o_clreq_r;   // we are generating a request, and it is accepted
   wire s0_clrsp_act = i_clrsp_v & i_clrsp_r;   // we have a valid response and we are accepting it
@@ -164,7 +160,7 @@ module l1_stream_ptr #
   );
 
   assign o_clreq_v = ~s0_ncl_req_zero & ~i_rst_end;
-  assign o_d = {s0_clid, s0_clofs};
+  assign o_global_ptr = {s0_clid, s0_clofs};
 
   // Signal is needed in each read port module to determine if a read is out of bounds.
   assign o_single_v = (s0_ncl == 1);
