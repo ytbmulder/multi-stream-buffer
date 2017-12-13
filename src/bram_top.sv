@@ -12,6 +12,8 @@ module bram_top #
   parameter   l1_nstrms_width         = $clog2(l1_nstrms),
   parameter   l1_ncl                  = 16,               // Number of cache lines per stream.
   parameter   l1_ncl_width            = $clog2(l1_ncl)
+
+  // TODO: extend to multiple nports.
 )
 (
   input                               clk1x,
@@ -44,6 +46,7 @@ module bram_top #
   wire [l1_ncl_width-1:0]    s1_ra_cl;
   wire [WAYS_WIDTH-1:0]      s1_ra_of;
 
+  // TODO: width incorrent when channels = 1.
   base_areg # (
     .width  (channels_width+WAYS_WIDTH+ADDR_WIDTH-1),
     .lbl    (3'b110)
@@ -130,26 +133,35 @@ module bram_top #
     end
   endgenerate
 
-  // Channel select MUX.
-  wire [channels_width-1:0] s2_sel;
-  base_vlat # (
-    .width  (channels_width)
-    ) CH_VLAT (
-    .clk    (clk1x),
-    .reset  (reset),
-    .din    (s1_ra_ch),
-    .q      (s2_sel)
-  );
-
   wire [DATA_WIDTH-1:0] s2a_rd;
-  base_emux_le # (
-    .width (DATA_WIDTH),
-    .ways  (channels)
-    ) CH_MUX (
-    .din   (s2_rd),
-    .sel   (s2_sel),
-    .dout  (s2a_rd)
-  );
+
+  generate
+    if( channels == 1 ) begin
+      // One channel, therefore no MUX required.
+      assign s2a_rd = s2_rd;
+    end
+    else if( channels > 1 ) begin
+      // Channel select MUX.
+      wire [channels_width-1:0] s2_sel;
+      base_vlat # (
+        .width  (channels_width)
+        ) CH_VLAT (
+        .clk    (clk1x),
+        .reset  (reset),
+        .din    (s1_ra_ch),
+        .q      (s2_sel)
+      );
+
+      base_emux_le # (
+        .width (DATA_WIDTH),
+        .ways  (channels)
+        ) CH_MUX (
+        .din   (s2_rd),
+        .sel   (s2_sel),
+        .dout  (s2a_rd)
+      );
+    end
+  endgenerate
 
   // Alignment reigster.
   wire [DATA_WIDTH-1:0] s2b_rd;

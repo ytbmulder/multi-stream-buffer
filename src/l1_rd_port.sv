@@ -109,9 +109,40 @@ module l1_rd_port #
   // TODO: move the following two signals up in this file.
   // not valid L1 read (out of bounds) when L2 stream has ended & when reading last valid line (thus L1 has not yet ended) & when we carry and thus want to read the next valid line which doesnt exist.
   // TODO: use emux_le module for i_rst_end[] and i_single_v
+  // ncl_req_zero is not required, since L2 already indicates its ready to be reset by asserting i_rst_end.
   wire out_of_bounds_rd_port = i_rst_end[i_rd_sid] & i_single_v[i_rd_sid] & o_addr_ptr[clofs_width];
 
   // invalidate input reads when the requested L1 stream has ended.
   wire invalidate_rd = i_l1_end[i_rd_sid];
+
+
+
+//------------------------------------------
+  // TODO: idea for ending stream. you read out of bounds if:
+  // TODO:   if i_rst_end[i_rd_sid] & ncl_valid == 0 & carry bit = 1 // wants to read from next cache line, but that is out of bounds.
+  // TODO:     then invalidate_rd == 1
+
+  // TODO: o_rst_end should be equal to this:
+  // TODO: o_rst_end = ncl_v_zero & i_rst_end & ncl_req_zero
+
+
+
+  // Internal read counters.
+  integer counter = 0;
+  integer counter_o_addr_act = 0;
+
+  integer counter2 = 0;
+  integer counter_i_rd_act = 0;
+
+  always @ (posedge clk) begin
+    if (o_addr_v & o_addr_r)
+      counter = counter + 1;
+    counter_o_addr_act = counter / 8;
+
+    if (i_rd_v & i_rd_r)
+      counter2 = counter2 + 1;
+    counter_i_rd_act = counter2 / 8;
+  end
+//------------------------------------------
 
 endmodule // l1_rd_port
