@@ -28,34 +28,30 @@ module apl_top_tb;
   parameter l2_ncl_width                = $clog2(l2_ncl);
   parameter channels                    = 2;                  // nstrms/l2_nstrms
   parameter channels_width              = $clog2(channels);
+  parameter ra_out_width                = channels_width+l2_nstrms_width; // o_ra width.
 
   // SETUP
   reg clk1x;
   reg clk2x;
   reg reset;
 
-  always
-  begin
+  always begin
     clk1x <= 1'b1;
     #(2.0);
     clk1x <= 1'b0;
     #(2.0);
   end
 
-  always
-  begin
+  always begin
     clk2x <= 1'b1;
     #(1.0);
     clk2x <= 1'b0;
     #(1.0);
   end
 
-  initial
-  begin
+  initial begin
     clk1x = 0;
     clk2x = 0;
-    #16000;
-    $finish;
   end
 
   initial begin
@@ -71,6 +67,8 @@ module apl_top_tb;
       $dumpfile("apl_top_tb.vcd");
       $dumpvars(0, apl_top_tb);
     `endif
+
+    $display(); // Print empty line.
   end
 
   // SIGNAL DECLARATIONS
@@ -95,6 +93,7 @@ module apl_top_tb;
   wire [nports-1:0]                     o_rd_v;
   reg  [nports-1:0]                     o_rd_r;
   wire [nports*2*DATA_WIDTH-1:0]        o_rd_d;
+  wire [nports*ra_out_width-1:0]        o_rd_sid;
 
 /*
   // L1 READ INTERFACE
@@ -104,16 +103,16 @@ module apl_top_tb;
   wire [nports*ptr_width-1:0]           o_l1_addr_ptr;
 */
 
+  // L1 WRITE INTERFACE
+  reg  [channels-1:0]                   i_we;
+  reg  [channels*ADDR_WIDTH-1:0]        i_wa;
+  reg  [channels*WAYS*DATA_WIDTH-1:0]   i_wd;
+
   // L2 READ INTERFACE
   wire [channels-1:0]                   o_l2_addr_v;
   reg  [channels-1:0]                   o_l2_addr_r;
   wire [channels*l2_nstrms_width-1:0]   o_l2_addr_sid;
   wire [channels*l2_ncl_width-1:0]      o_l2_addr_ptr;
-
-  // L2 WRITE INTERFACE
-  reg  [channels-1:0]                   i_we;
-  reg  [channels*ADDR_WIDTH-1:0]        i_wa;
-  reg  [channels*WAYS*DATA_WIDTH-1:0]   i_wd;
 
   // OPENCAPI 3.0 REQUEST INTERFACE
   wire                                  o_req_v;
@@ -186,18 +185,21 @@ module apl_top_tb;
       .o_v(s2_rsp_v),.o_r(s2_rsp_r),.o_d(s2_rsp_sid)
   );
 
-/*
-  integer l1_counter [0:nstrms-1];
+  // Initialise l1_counters depending on the stream number.
+  reg [addr_width-1:0] l1_counter [0:nstrms-1];
+  integer rr;
   initial begin
-    l1_counter[1] = rst_ea_b; // stream 1
-    l1_counter[7] = rst_ea_b; // stream 7
+    for(rr=0; rr<nstrms; rr=rr+1) begin
+      // TODO: change in the future to a predefined data structure with rst_ea_b * _e values for each stream.
+      // TODO: write a verification unit which checks that a stream does not read out-of-bounds, thus the read address surpasses the rst_ea_e value.
+      l1_counter[rr] = rst_ea_b;
+      //$display( "%0d - l1_counter[%0d] = %0d", $time, rr, l1_counter[rr] );
+    end
   end
-*/
-  integer l1_counter = rst_ea_b;
 
   // Send response to L1 stream from L2 URAM.
   wire [nstrms-1:0] s5_rsp_uram_v;
-  genvar k;
+  genvar k, tt;
   generate
     for(k=0; k<channels; k=k+1) begin : GEN_DINGES
       wire [l2_nstrms_width-1:0] s1_rsp_sid_enc = o_l2_addr_sid[(k+1)*l2_nstrms_width-1:k*l2_nstrms_width];
@@ -209,30 +211,45 @@ module apl_top_tb;
       );
       wire v, r;
       wire [l2_nstrms-1:0] s2_rsp_sid_dec;
-      base_areg # ( .lbl(3'b110),.width(16)) is0_req_ding_reg (
+      base_areg # ( .lbl(3'b110),.width(l2_nstrms)) is0_req_ding_reg (
         .clk(clk1x),.reset(reset),
         .i_v(o_l2_addr_v[k]),.i_r(s0_l2_addr_r[k]),.i_d(s1_rsp_sid_dec),
         .o_v(v),.o_r(r),.o_d(s2_rsp_sid_dec)
+      );
+      base_ademux # (
+        .ways(16)
+      ) is1_rsp_demux_bla (
+        .i_v(v),
+        .i_r(r),
+        .o_v(s5_rsp_uram_v[(k+1)*16-1:k*16]),
+        .o_r(i_rsp_uram_r[(k+1)*16-1:k*16]),
+        .sel(s2_rsp_sid_dec)
       );
 
       // Write new data from L2 to L1.
       // TODO: use o_l2_addr_act instead of _v. However, _r == 1'b1 by default.
       // TODO: fix properly for multiple read ports.
+      integer ww;
       always @ (posedge clk1x) begin
         if( o_l2_addr_v[k] == 1'b1 ) begin
-          //$display( "%0d - TEST %d", $time, k );
-        //  $display( "l1_counter[%0d] = %0d", s1_rsp_sid_enc, l1_counter[s1_rsp_sid_enc] );
-        //  l1_write_cache_line( k, s1_rsp_sid_enc, l1_counter[s1_rsp_sid_enc] % l1_ncl ); // channel, stream, line
-        //  l1_counter[s1_rsp_sid_enc] = l1_counter[s1_rsp_sid_enc] + 1;
 
-        l1_write_cache_line( k, 1, l1_counter % l1_ncl ); // channel, stream, line
-        l1_counter = l1_counter + 1;
+          ww = s1_rsp_sid_enc; // Cast wire to integer.
+          if( k == 1 ) begin
+            ww = ww + l2_nstrms;
+          end
+          //$display( "%0d - L2 SID = %0d, ", $time, ww );
+
+          l1_write_cache_line( k, ww, l1_counter[ww] % l1_ncl ); // channel, stream, line
+
+          l1_counter[ww] = l1_counter[ww] + 1;
+          //$display( "l1_counter[%0d] = %0d", ww, l1_counter[ww] );
         end
       end
 
+
+
       // Properly end the data to be written.
       // TODO: use o_l2_addr_act instead of _v. However, _r == 1'b1 by default.
-      // TODO: fix properly for multiple read ports.
       always @ (negedge clk1x) begin
         if( o_l2_addr_v[k] == 1'b0 ) begin
           //$display( "%0d - L1 rsp LOW", $time );
@@ -244,15 +261,6 @@ module apl_top_tb;
         end
       end
 
-      base_ademux # (
-        .ways(16)
-      ) is1_rsp_demux_bla (
-        .i_v(v),
-        .i_r(r),
-        .o_v(s5_rsp_uram_v[(k+1)*16-1:k*16]),
-        .o_r(i_rsp_uram_r[(k+1)*16-1:k*16]),
-        .sel(s2_rsp_sid_dec)
-      );
     end
   endgenerate
 
@@ -292,6 +300,7 @@ module apl_top_tb;
     .o_rd_v         (o_rd_v),
     .o_rd_r         (o_rd_r),
     .o_rd_d         (o_rd_d),
+    .o_rd_sid       (o_rd_sid),
 
 /*
     .o_l1_addr_v    (o_l1_addr_v),
@@ -342,15 +351,16 @@ module apl_top_tb;
   // TODO: write in thesis: ocapi probably supplies data as first half and second half. my buffer requires a rearrangement of that data. the reason is the chosen memory organisation. ideally you want to write the first half in one half cycle, and the other half in the second half cycle. However, in order to utilise BRAM primitives fully, a single element in divided over two entries within the same BRAM. Therefore a rearrangement is required.
 
   // Parameters for data generation.
-  localparam number_of_cache_lines = rst_ea_e - rst_ea_b;
-  localparam number_of_half_elements = number_of_cache_lines * 2 * WAYS;
+  localparam number_of_cache_lines   = rst_ea_e - rst_ea_b;
+  localparam number_of_elements      = number_of_cache_lines * WAYS;
+  localparam number_of_half_elements = number_of_elements * 2;
 
   // Generate half-element data set.
   integer i, nx, ny;
   reg [DATA_WIDTH-1:0] data [0:nstrms*number_of_half_elements-1];
   initial begin
     for( i=0; i<nstrms*number_of_half_elements; i=i+1 ) begin
-      data[i] = i;
+      data[i] = i; // TODO: in the future use: data[i] = $urandom;
       //$display("data[%0d] = %d", i, data[i] );
     end
   end
@@ -382,43 +392,43 @@ module apl_top_tb;
     input [ADDR_WIDTH-1:0]      address;
     input [WAYS*DATA_WIDTH-1:0] data;
     begin
-      //$display("%g CPU Write task with address : %h Data : %h", $time, address, data);
-      //$display("%g  -> Driving CE, WR, WR data and ADDRESS on to bus", $time);
       @ (negedge clk2x);
         i_we[channel] = 1'b1;
         i_wa = address << (channel*ADDR_WIDTH);
         //$display("addr = %b, addr shift = %b", address, tmp);
         i_wd = data << (channel*WAYS*DATA_WIDTH);
-        //$display("======================");
     end
   endtask
 
   // Write task to write full cache line. Calls l1_write task twice.
-  integer counter [0:nstrms-1];
+  reg [addr_width-1:0] task_counter [0:nstrms-1];
+  integer tsk_cntr_int;
+
+  // Initialise task_counter offsets, depending on the stream number.
   initial begin
-    counter[1] = 1*2*number_of_cache_lines;
-    //$display("%0d - counter 1", $time, counter[1]);
-    counter[7] = 7*2*number_of_cache_lines;
-    //$display("%0d - counter 7", $time, counter[7]);
+    for( tsk_cntr_int=0; tsk_cntr_int<nstrms; tsk_cntr_int=tsk_cntr_int+1 ) begin
+      task_counter[tsk_cntr_int] = tsk_cntr_int * 2 * number_of_cache_lines;
+      //$display( "%0d - task_counter[%0d] = %0d", $time, tsk_cntr_int,  task_counter[tsk_cntr_int] );
+    end
   end
 
   task l1_write_cache_line;
     input [channels_width-1:0]  channel;
-    input [nstrms_width-1:0]    stream;
+    input [l2_nstrms_width-1:0] stream;
     input [l1_ncl_width-1:0]    line;
     begin
 
-      //$display( "%0d - l1_wr_cl() - counter[stream] = %0d - half_cl = %0h", $time, counter[stream], half_cache_line[counter[stream]] );
+      //$display( "%0d - l1_wr_cl() - counter[stream] = %0d - half_cl = %0h", $time, task_counter[stream], half_cache_line[task_counter[stream]] );
 
       // Write even half-element data.
-      l1_write( channel, {stream, line, 1'b0}, half_cache_line[counter[stream]] );
+      l1_write( channel, {stream, line, 1'b0}, half_cache_line[task_counter[{channel, stream}]] );
       // Increment global counter.
-      counter[stream] = counter[stream] + 1;
+      task_counter[{channel, stream}] = task_counter[{channel, stream}] + 1;
 
       // Write odd half-element data.
-      l1_write( channel, {stream, line, 1'b1}, half_cache_line[counter[stream]] );
+      l1_write( channel, {stream, line, 1'b1}, half_cache_line[task_counter[{channel, stream}]] );
       // Increment global counter.
-      counter[stream] = counter[stream] + 1;
+      task_counter[{channel, stream}] = task_counter[{channel, stream}] + 1;
     end
   endtask
 
@@ -481,6 +491,26 @@ module apl_top_tb;
     end
   endtask
 
+  // Task to functionally reset a stream.
+  task tsk_func_rst;
+    input [nstrms_width-1:0] sid;
+    // TODO: have inputs for rst_ea_b and rst_ea_e as well.
+    begin
+      // Reset stream 1.
+      i_rst_v       <= 1;
+      i_rst_sid     <= sid;
+      i_rst_ea_b    <= rst_ea_b * 128; // EA increments per 128B.
+      i_rst_ea_e    <= rst_ea_e * 128;
+      o_rst_r       <= {nstrms{1'b1}};
+      //i_rd_v        <= 0;
+      //i_rd_sid      <= 0;
+      o_rd_r        <= {nports{1'b1}};
+      o_l2_addr_r   <= {channels{1'b1}};
+      #4;
+    end
+  endtask
+
+
   // Display when stream starts (is reset) and finishes.
   genvar vv;
   generate
@@ -500,35 +530,100 @@ module apl_top_tb;
     end
   endgenerate
 
+
   // Verify o_rd_d by comparing it to the generated data array: data.
   // data array is index using: stream * cl * 2 (double pump) * ways
-  integer verify_counter = 1*number_of_half_elements; // stream 1
-  reg [2*DATA_WIDTH-1:0] rd_d, test_d;
-  integer comparison;
-  always @ (negedge clk1x) begin
-    if( o_rd_v == 1'b1 ) begin
-      //$display( "%0d - o_rd_v is high - o_rd_d = %h", $time, o_rd_d );
-      //$display( "data = %h", {data[verify_counter+1], data[verify_counter]} );
-      rd_d = o_rd_d;
-      test_d = {data[verify_counter+1], data[verify_counter]};
-      comparison = (rd_d == test_d);
-      //if( comparison == 1'b1 ) begin
-      //  $display( "%0d - CORRECT!", $time );
-      //end
-      if( comparison != 1'b1 ) begin
-        $display( "%0d - ERROR!", $time );
-        $display( "Expected = %h", test_d );
-        $display( "Output   = %h", rd_d );
-        //$finish;
-      end
-      verify_counter = verify_counter + 2;
+  reg [addr_width-1:0] verify_counter [0:nstrms];
+  integer ww;
+  initial begin
+    for( ww=0; ww<nstrms; ww=ww+1 ) begin
+      verify_counter[ww] = ww*number_of_half_elements;
+      //$display("verif counter %0d = %0d", ww, verify_counter[ww] );
     end
+  end
+
+  reg [2*DATA_WIDTH-1:0] rd_d, test_d;
+  reg comparison [0:nstrms-1];
+  genvar qq;
+  generate
+    for( qq=0; qq<nstrms; qq=qq+1 ) begin
+      always @ (negedge clk1x) begin
+        if( o_rd_v == 1'b1 ) begin
+          if( o_rd_sid == qq ) begin
+            rd_d = o_rd_d;
+            test_d = {data[verify_counter[qq]+1], data[verify_counter[qq]]};
+            comparison[qq] = (rd_d == test_d);
+            //if( comparison[qq] === 1'b1 ) begin // === Also takes X and Z into account.
+            //  $display( "%0d - Stream %0d CORRECT!", $time-2, qq );
+            //end
+            if( comparison[qq] !== 1'b1 ) begin // === Also takes X and Z into account.
+              $display( "%0d - Stream %0d ERROR!", $time-2, qq );
+              $display( "Expected = %h", test_d );
+              $display( "Output   = %h", rd_d );
+            end
+            verify_counter[qq] = verify_counter[qq] + 2;
+          end
+        end
+      end
+    end
+  endgenerate
+
+  // Count the number of AFU read requests and responses made.
+  integer rd_req_counter [0:nstrms-1];
+  integer rd_v_req_counter [0:nstrms-1];
+  integer rd_rsp_counter [0:nstrms-1];
+  integer rd_v_rsp_counter [0:nstrms-1];
+  integer rd_req_int;
+  initial begin
+    for(rd_req_int=0; rd_req_int<nstrms; rd_req_int=rd_req_int+1) begin
+      rd_req_counter[rd_req_int] = 0;
+      rd_rsp_counter[rd_req_int] = 0;
+      rd_v_req_counter[rd_req_int] = 0;
+      rd_v_rsp_counter[rd_req_int] = 0;
+    end
+  end
+
+  genvar yy;
+  generate
+    // TODO: for loop not needed, just as with BRAM channel write task calling.
+    // TODO: finish coding of rsp_v counter for not all response have been accepted.
+    for( yy=0; yy<nstrms; yy=yy+1 ) begin
+      always @ (negedge clk1x) begin
+        // Increment counter if a read request has been made.
+        if( (i_rd_v & i_rd_r) === 1'b1 ) begin
+          if( i_rd_sid == yy ) begin
+            //$display( "%0d - i rd act - %0d", $time, yy );
+            rd_req_counter[yy] = rd_req_counter[yy] + 1;
+            //$display( "rd_req_counter = %0d", rd_req_counter[yy] );
+          end
+        end
+
+        if( i_rd_v === 1'b1 ) begin
+          if( i_rd_sid == yy ) begin
+            rd_v_req_counter[yy] = rd_v_req_counter[yy] + 1;
+          end
+        end
+
+        // Increment counter if a read response has been received.
+        if( (o_rd_v & o_rd_r) === 1'b1 ) begin
+          if( o_rd_sid == yy ) begin
+            rd_rsp_counter[yy] = rd_rsp_counter[yy] + 1;
+          end
+        end
+      end
+    end
+  endgenerate
+
+  always @ (negedge clk1x) begin
+    if(o_l2_addr_v == 2'b11)
+      $display("%0d - HOEZEE!", $time );
   end
 //------------------------------------------------
 
 
 
   // DRIVE REGS - best practise to change inputs on a negative edge.
+  integer rst_sid;
   initial begin
     // Initialise all input signals as zero.
     init( 102 );
@@ -538,38 +633,23 @@ module apl_top_tb;
 
 
 
-    // Reset stream 1.
-    i_rst_v       <= 1;
-    i_rst_sid     <= 1;
-    i_rst_ea_b    <= rst_ea_b * 128;
-    i_rst_ea_e    <= rst_ea_e * 128; // EA increments per 128B.
-    o_rst_r       <= {nstrms{1'b1}};
-    i_rd_v        <= 0;
-    i_rd_sid      <= 0;
-    o_rd_r        <= {nports{1'b1}};
-    o_l2_addr_r   <= {channels{1'b1}};
-    #4;
+    // Functionally reset all streams.
+    for(rst_sid=0; rst_sid<nstrms/2; rst_sid=rst_sid+1 ) begin
+      // Functionally reset a stream.
+      tsk_func_rst( rst_sid );
 
-    // Rest
-    rest( 100 );
-
-    // Reset stream 7.
-    //i_rst_v       <= 1;
-    i_rst_sid     <= 7;
-    i_rst_ea_b    <= rst_ea_b * 128;
-    i_rst_ea_e    <= rst_ea_e * 128; // EA increments per 128B.
-    o_rst_r       <= {nstrms{1'b1}};
-    i_rd_v        <= 0;
-    i_rd_sid      <= 0;
-    o_rd_r        <= {nports{1'b1}};
-    o_l2_addr_r   <= {channels{1'b1}};
-    #4;
-
-    // Rest
-    rest( 100 );
+      // Rest
+      rest( 100 );
 
 
+      // Functionally reset a stream.
+      tsk_func_rst( rst_sid+16 );
 
+      // Rest
+      rest( 100 );
+    end
+
+/*
     // Read from stream 1.
     // 3 cache lines
     repeat( 3*8 ) begin
@@ -584,6 +664,32 @@ module apl_top_tb;
     repeat( 383*8 ) begin
       tsk_afu_rd( 1, 1 ); // enable, sid
     end
+
+    // Rest
+    rest( 8 );
+
+    // Read from stream 7.
+    // 384 cache lines
+    repeat( 384*8 ) begin
+      tsk_afu_rd( 1, 7 ); // enable, sid
+    end
+
+    // Rest
+    rest( 100 );
+*/
+
+    // Randomly generate AFU read requests.
+    repeat( 8*8 ) begin // read one cache line if equal to 8.
+      // urandom between and including 0 and l2_nstrms.
+      tsk_afu_rd( 1, $urandom_range( nstrms-1, 0 ) ); // enable, sid
+    end
+
+    // Rest
+    rest( 100 );
+
+    // TODO based on randomized AFU read access pattern:
+    // - Make i_rd_v driver aware of i_rd_r signal and of the o_rst_end signal.
+    // - Test the case again with l2_nstrms instead. If sid = 16 it does not work. Those reads are not serviced. Probably because that stream has not been reset. These reads are probably discarded in order to not create a deadlock. Investigate this further.
 
 
 
@@ -638,8 +744,21 @@ module apl_top_tb;
 
 
 
+    // Compare the read request and response counters.
+    for(rd_req_int=0; rd_req_int<nstrms; rd_req_int=rd_req_int+1) begin
+      //if( rd_req_counter[rd_req_int] === rd_rsp_counter[rd_req_int] )
+        //$display( "%0d - rd_cntr %0d PASS", $time, rd_req_int );
+      if( rd_req_counter[rd_req_int] !== rd_rsp_counter[rd_req_int] )
+        $display( "%0d - FAIL! rd_cntr %0d", $time, rd_req_int );
+
+      if( (rd_v_req_counter[rd_req_int] - rd_req_counter[rd_req_int]) !== 0 )
+        $display( "%0d - FAIL! STREAM %0d has %0d unaccepted i_rd_v", $time, rd_req_int, rd_v_req_counter[rd_req_int] - rd_req_counter[rd_req_int] );
+    end
+
     // Terminate testbench.
     init( 4 );
+    $display(); // Print empty line.
+    $finish;
   end
 
 endmodule // apl_top_tb

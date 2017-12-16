@@ -30,7 +30,8 @@ module apl_top #
   parameter l2_ncl                      = 256,                // Number of L2 cache lines per stream.
   parameter l2_ncl_width                = $clog2(l2_ncl),
   parameter channels                    = 4,                  // nstrms/l2_nstrms
-  parameter channels_width              = $clog2(channels)
+  parameter channels_width              = $clog2(channels),
+  parameter ra_out_width                = channels_width+l2_nstrms_width // o_ra width.
 )
 (
   input                                 clk1x,
@@ -58,6 +59,7 @@ module apl_top #
   output [nports-1:0]                   o_rd_v,
   input  [nports-1:0]                   o_rd_r,
   output [nports*2*DATA_WIDTH-1:0]      o_rd_d,
+  output [nports*ra_out_width-1:0]      o_rd_sid,
 
 /*
   // L1 READ INTERFACE
@@ -129,7 +131,8 @@ module apl_top #
   wire [nports*nstrms_width-1:0]  s1_l1_addr_sid;
   wire [nports*ptr_width-1:0]     s1_l1_addr_ptr;
 
-  wire [channels_width-1:0]       s1_l1_addr_ch = s1_l1_addr_sid[nstrms_width-1:channels_width];
+  // TODO: fix for multiple read ports (nports).
+  wire [channels_width-1:0]       s1_l1_addr_ch = s1_l1_addr_sid[nstrms_width-1:l1_ncl_width];
   wire [l1_ncl_width-1:0]         s1_l1_addr_st = s1_l1_addr_sid[l1_ncl_width-1:0];
 
   wire [l1_ncl_width-1:0]         s1_l1_addr_cl = s1_l1_addr_ptr[ptr_width-1:clofs_width];
@@ -184,6 +187,7 @@ module apl_top #
     .o_v        (o_rd_v),
     .o_r        (o_rd_r),
     .o_rd       (o_rd_d),
+    .o_ra       (o_rd_sid),
     .i_we       (i_we),
     .i_wa       (i_wa),
     .i_wd       (i_wd)
