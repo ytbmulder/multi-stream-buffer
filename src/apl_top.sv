@@ -61,14 +61,6 @@ module apl_top #
   output [nports*2*DATA_WIDTH-1:0]      o_rd_d,
   output [nports*ra_out_width-1:0]      o_rd_sid,
 
-/*
-  // L1 READ INTERFACE
-  output [nports-1:0]                   o_l1_addr_v,
-  input  [nports-1:0]                   o_l1_addr_r,
-  output [nports*nstrms_width-1:0]      o_l1_addr_sid,
-  output [nports*ptr_width-1:0]         o_l1_addr_ptr,
-*/
-
   // L1 WRITE INTERFACE
   input  [channels-1:0]                 i_we,
   input  [channels*ADDR_WIDTH-1:0]      i_wa,

@@ -1,0 +1,56 @@
+[*]
+[*] GTKWave Analyzer v3.3.82 (w)1999-2017 BSI
+[*] Sun Dec 17 14:43:16 2017
+[*]
+[dumpfile] "/Users/ytbmulder/Google Drive/Thesis/Verilog/stream-cache/work/uram_top_tb.vcd"
+[dumpfile_mtime] "Sun Dec 17 14:38:55 2017"
+[dumpfile_size] 34217
+[savefile] "/Users/ytbmulder/Google Drive/Thesis/Verilog/stream-cache/sim/uram_top_tb.gtkw"
+[timestart] 92
+[size] 1440 852
+[pos] -1 -1
+*-4.000000 130 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] uram_top_tb.
+[treeopen] uram_top_tb.IDUT.
+[treeopen] uram_top_tb.IDUT.URAM.
+[treeopen] uram_top_tb.IDUT.URAM.GEN_WAYS[0].
+[sst_width] 193
+[signals_width] 296
+[sst_expanded] 1
+[sst_vpaned_height] 257
+@28
+uram_top_tb.IDUT.clk1x
+uram_top_tb.IDUT.clk2x
+uram_top_tb.IDUT.reset
+@200
+-
+@28
+uram_top_tb.IDUT.i_l2_addr_v
+uram_top_tb.IDUT.i_l2_addr_r
+@24
+uram_top_tb.IDUT.i_l2_addr_sid[3:0]
+uram_top_tb.IDUT.i_l2_addr_ptr[6:0]
+@200
+-
+@28
+uram_top_tb.IDUT.o_rsp_v[15:0]
+uram_top_tb.IDUT.o_rsp_r[15:0]
+@200
+-
+@28
+uram_top_tb.IDUT.o_we
+uram_top_tb.IDUT.o_wa[8:0]
+@22
+uram_top_tb.IDUT.o_wd[511:0]
+@200
+-
+@28
+uram_top_tb.IDUT.i_we
+uram_top_tb.IDUT.i_wa[11:0]
+@22
+uram_top_tb.IDUT.i_wd[511:0]
+@200
+-
+-INTERNAL
+[pattern_trace] 1
+[pattern_trace] 0

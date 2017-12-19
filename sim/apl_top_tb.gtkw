@@ -1,70 +1,74 @@
 [*]
 [*] GTKWave Analyzer v3.3.82 (w)1999-2017 BSI
-[*] Thu Aug 24 21:04:01 2017
+[*] Sun Dec 17 12:03:08 2017
 [*]
 [dumpfile] "/Users/ytbmulder/Google Drive/Thesis/Verilog/stream-cache/work/apl_top_tb.vcd"
-[dumpfile_mtime] "Thu Aug 24 21:00:37 2017"
-[dumpfile_size] 2616280
+[dumpfile_mtime] "Sat Dec 16 18:39:41 2017"
+[dumpfile_size] 183523434
 [savefile] "/Users/ytbmulder/Google Drive/Thesis/Verilog/stream-cache/sim/apl_top_tb.gtkw"
-[timestart] 85
+[timestart] 4199
 [size] 1440 852
 [pos] -1 -1
-*-4.000000 100 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-4.000000 4238 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] apl_top_tb.
+[treeopen] apl_top_tb.GEN_DINGES[1].
 [treeopen] apl_top_tb.IDUT.
-[treeopen] apl_top_tb.IDUT.is0_l1_ctrl_top.gen2[1].
+[treeopen] apl_top_tb.IDUT.is0_bram_top.GEN_SLICES[1].
+[treeopen] apl_top_tb.IDUT.is0_bram_top.genblk4.
+[treeopen] apl_top_tb.IDUT.is0_l1_ctrl_top.gen2[21].
+[treeopen] apl_top_tb.IDUT.is0_l1_ctrl_top.gen2[30].
+[treeopen] apl_top_tb.IDUT.is0_l1_ctrl_top.gen2[5].
 [treeopen] apl_top_tb.IDUT.is0_l2_ctrl_top.
-[treeopen] apl_top_tb.IDUT.is0_l2_ctrl_top.GEN_PTR[1].
+[treeopen] apl_top_tb.IDUT.is0_l2_ctrl_top.GEN_PTR[21].
+[treeopen] apl_top_tb.IDUT.is0_l2_ctrl_top.GEN_PTR[5].
 [sst_width] 193
-[signals_width] 317
+[signals_width] 441
 [sst_expanded] 1
 [sst_vpaned_height] 337
 @28
-apl_top_tb.IDUT.clk
-apl_top_tb.IDUT.reset
+apl_top_tb.IDUT.clk1x
+apl_top_tb.IDUT.clk2x
 @200
 -INPUT RESET
 @28
 apl_top_tb.IDUT.i_rst_v
 apl_top_tb.IDUT.i_rst_r
-@24
-apl_top_tb.IDUT.i_rst_sid[5:0]
 @25
-apl_top_tb.IDUT.i_rst_ea_b[63:0]
+apl_top_tb.IDUT.i_rst_sid[4:0]
+@28
+apl_top_tb.IDUT.o_rst_end[31:0]
+@200
+-
+@28
+apl_top_tb.IDUT.i_rd_v
+apl_top_tb.IDUT.i_rd_r
 @24
-apl_top_tb.IDUT.i_rst_ea_e[63:0]
-@200
--OUTPUT RESET
-@22
-apl_top_tb.IDUT.o_rst_v[63:0]
-apl_top_tb.IDUT.o_rst_r[63:0]
-apl_top_tb.IDUT.o_rst_end[63:0]
-@200
--AFU READ
+apl_top_tb.IDUT.i_rd_sid[4:0]
 @28
-apl_top_tb.IDUT.i_rd_v[7:0]
-apl_top_tb.IDUT.i_rd_r[7:0]
+apl_top_tb.IDUT.o_rd_v
+@24
+apl_top_tb.IDUT.o_rd_sid[4:0]
 @22
-apl_top_tb.IDUT.i_rd_sid[47:0]
+apl_top_tb.IDUT.o_rd_d[127:0]
 @200
--L1 ADDR
+-
 @28
-apl_top_tb.IDUT.o_l1_addr_v[7:0]
-apl_top_tb.IDUT.o_l1_addr_r[7:0]
+apl_top_tb.IDUT.i_we[1:0]
+apl_top_tb.IDUT.i_wa[17:0]
 @22
-apl_top_tb.IDUT.o_l1_addr_sid[47:0]
-apl_top_tb.IDUT.o_l1_addr_ptr[55:0]
+apl_top_tb.IDUT.i_wd[1023:0]
 @200
--L2 ADDR
-@28
-apl_top_tb.IDUT.o_l2_addr_v[3:0]
-apl_top_tb.IDUT.o_l2_addr_r[3:0]
-@22
-apl_top_tb.IDUT.o_l2_addr_sid[15:0]
-apl_top_tb.IDUT.o_l2_addr_ptr[31:0]
-@200
+-
 -INTERNAL
+-
 @22
-apl_top_tb.IDUT.s2_rst_ea_b[255:0]
+apl_top_tb.IDUT.is0_bram_top.o_rd[127:0]
+@28
+apl_top_tb.IDUT.is0_bram_top.GEN_SLICES[1].SLICE.i_wa[8:0]
+@200
+-
+@28
+apl_top_tb.IDUT.is0_l2_ctrl_top.o_addr_v[1:0]
+apl_top_tb.IDUT.is0_l2_ctrl_top.o_addr_sid[7:0]
 [pattern_trace] 1
 [pattern_trace] 0
