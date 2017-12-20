@@ -167,6 +167,6 @@ module l1_stream_ptr #
   assign o_d = {s0_clid, s0_clofs};
 
   // Signal is needed in each read port module to determine if a read is out of bounds.
-  assign o_single_v = s0_ncl_zero; //(s0_ncl == 1);
+  assign o_single_v = (s0_ncl == 1);
 
 endmodule // l1_stream_ptr
