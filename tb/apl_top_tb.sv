@@ -29,8 +29,8 @@ module apl_top_tb;
   parameter channels                    = 2;                  // nstrms/l2_nstrms
   parameter channels_width              = $clog2(channels);
   parameter ra_out_width                = channels_width+l2_nstrms_width; // o_ra width.
-  parameter L2_RAM_DEPTH              = 4096;
-  parameter L2_RAM_DEPTH_WIDTH        = $clog2(L2_RAM_DEPTH);
+  parameter L2_RAM_DEPTH                = 4096;
+  parameter L2_RAM_DEPTH_WIDTH          = $clog2(L2_RAM_DEPTH);
 
   // SETUP
   reg clk1x;
@@ -89,13 +89,42 @@ module apl_top_tb;
   // AFU READ INTERFACE
   reg  [nports-1:0]                     i_rd_v;
   wire [nports-1:0]                     i_rd_r;
-  reg  [nports*nstrms_width-1:0]        i_rd_sid;
+  //reg  [nports*nstrms_width-1:0]        i_rd_sid;
+  reg  [nstrms_width-1:0] i_rd_sid_2d [0:nports-1];
+  wire [nports*nstrms_width-1:0]        i_rd_sid;
+  genvar aaa;
+  generate
+    for(aaa=0; aaa<nports; aaa=aaa+1) begin
+      assign i_rd_sid[(aaa+1)*nstrms_width-1:aaa*nstrms_width] = i_rd_sid_2d[aaa];
+    end
+  endgenerate
 
   // AFU READ DATA INTERFACE
   wire [nports-1:0]                     o_rd_v;
   reg  [nports-1:0]                     o_rd_r;
-  wire [nports*2*DATA_WIDTH-1:0]        o_rd_d;
   wire [nports*ra_out_width-1:0]        o_rd_sid;
+  wire [nports*2*DATA_WIDTH-1:0]        o_rd_d;
+
+  wire [ra_out_width-1:0] o_rd_sid_2d [0:nports-1];
+  wire [2*DATA_WIDTH-1:0] o_rd_d_2d [0:nports-1];
+  genvar bbb;
+  generate
+    for(bbb=0; bbb<nports; bbb=bbb+1) begin
+      assign o_rd_sid_2d[bbb] = o_rd_sid[(bbb+1)*ra_out_width-1:bbb*ra_out_width];
+      assign o_rd_d_2d[bbb]   = o_rd_d[(bbb+1)*2*DATA_WIDTH-1:bbb*2*DATA_WIDTH];
+    end
+  endgenerate
+
+  // Dump 2D array data to VCD file.
+  // TODO: fix warning: array word apl_top_tb.i_rd_sid_2d[0] will conflict with an escaped identifier.
+  integer ccc;
+  initial begin
+    for(ccc=0; ccc<nports;ccc=ccc+1) begin
+      $dumpvars( 0, i_rd_sid_2d[ccc] );
+      $dumpvars( 0, o_rd_sid_2d[ccc] );
+      $dumpvars( 0, o_rd_d_2d[ccc] );
+    end
+  end
 
   // L2 WRITE INTERFACE
   reg                                         i_we;
@@ -315,9 +344,9 @@ module apl_top_tb;
     input [WAYS*DATA_WIDTH-1:0]                   data;
     begin
       @ (negedge clk2x);
-        i_we = 1'b1;
-        i_wa = address;
-        i_wd = data;
+        i_we <= 1'b1;
+        i_wa <= address;
+        i_wd <= data;
     end
   endtask
 
@@ -361,7 +390,7 @@ module apl_top_tb;
       i_rst_ea_e    <= 0;
       o_rst_r       <= {nstrms{1'b1}};
       i_rd_v        <= 0;
-      i_rd_sid      <= 0;
+      i_rd_sid_2d[0]      <= 0; // TODO: automate for nports.
       o_rd_r        <= {nports{1'b1}};
       #delay;
     end
@@ -378,7 +407,7 @@ module apl_top_tb;
       i_rst_ea_e    <= 0;
       o_rst_r       <= 0;
       i_rd_v        <= 0;
-      i_rd_sid      <= 0;
+      i_rd_sid_2d[0]      <= 0; // TODO: automate for nports.
       o_rd_r        <= 0;
       i_we          <= 0;
       i_wa          <= 0;
@@ -388,19 +417,14 @@ module apl_top_tb;
   endtask
 
   // Task to issue an AFU read request.
+  // i_rd_sid is blocking such that other read ports can manipulate the same signal within the same cycle. Shifting based on the rd_en (port id) is used.
   task tsk_afu_rd;
-    input                     rd_en;
+    input [nports-1:0]        port_id;
     input [nstrms_width-1:0]  sid;
     begin
-      i_rst_v       <= 0;
-      i_rst_sid     <= 0;
-      i_rst_ea_b    <= 0;
-      i_rst_ea_e    <= 0;
-      o_rst_r       <= {nstrms{1'b1}};
-      i_rd_v        <= 1;
-      i_rd_sid      <= sid;
-      o_rd_r        <= {nports{1'b1}};
-      #4;
+      i_rd_v[port_id] <= 1'b1;
+      //i_rd_sid         = i_rd_sid | (sid << (port_id * nstrms_width));
+      i_rd_sid_2d[port_id] = sid;
     end
   endtask
 
@@ -439,7 +463,7 @@ module apl_top_tb;
   endgenerate
 
   // Verify o_rd_d by comparing it to the generated data array: data.
-  // data array is index using: stream * cl * 2 (double pump) * ways
+  // Data array is indexed using: stream * cl * 2 (double pump) * ways.
   reg [addr_width-1:0] verify_counter [0:nstrms];
   integer ww;
   initial begin
@@ -449,9 +473,55 @@ module apl_top_tb;
   end
 
   reg [2*DATA_WIDTH-1:0] rd_d, test_d;
+  reg [nstrms_width-1:0] rd_sid;
   reg comparison [0:nstrms-1];
-  genvar qq;
-  generate
+
+  // TODO: fix verification logic for nports. Use 2D array for o_rd_sid and o_rd_d. Then indexing is allowed using a for loop and integer.
+  always @ (negedge clk1x) begin
+
+      if( o_rd_v[0] === 1'b1 ) begin
+
+        rd_sid = o_rd_sid[nstrms_width-1:0];
+        rd_d = o_rd_d;
+        test_d = {data[verify_counter[rd_sid]+1], data[verify_counter[rd_sid]]};
+        comparison[rd_sid] = (rd_d === test_d);
+
+        //if( comparison[rd_sid] === 1'b1 ) begin // === Also takes X and Z into account.
+          //$display( "%0d - RD Port %0d, Stream %0d CORRECT!", $time-2, 0, rd_sid );
+          //$display( "rd_sid = %0d, rd_d = %0h, test_d = %0h", rd_sid, rd_d, test_d );
+        //end
+        if( comparison[rd_sid] !== 1'b1 ) begin // === Also takes X and Z into account.
+          $display( "%0d - Stream %0d ERROR!", $time-2, rd_sid );
+          $display( "Expected = %h", test_d );
+          $display( "Output   = %h", rd_d );
+        end
+        verify_counter[rd_sid] = verify_counter[rd_sid] + 2;
+      end
+
+
+/* // TODO: implement this again
+      if( o_rd_v[1] === 1'b1 ) begin
+
+        rd_sid = o_rd_sid[2*nstrms_width-1:nstrms_width];
+        rd_d = o_rd_d[2*2*DATA_WIDTH-1:2*DATA_WIDTH];
+        test_d = {data[verify_counter[rd_sid]+1], data[verify_counter[rd_sid]]};
+        comparison[rd_sid] = (rd_d === test_d);
+
+        if( comparison[rd_sid] === 1'b1 ) begin // === Also takes X and Z into account.
+          $display( "%0d - RD Port %0d, Stream %0d CORRECT!", $time-2, 1, rd_sid );
+          $display( "rd_sid = %0d, rd_d = %0h, test_d = %0h", rd_sid, rd_d, test_d );
+        end
+        if( comparison[rd_sid] !== 1'b1 ) begin // === Also takes X and Z into account.
+          $display( "%0d - Stream %0d ERROR!", $time-2, rd_sid );
+          $display( "Expected = %h", test_d );
+          $display( "Output   = %h", rd_d );
+        end
+        verify_counter[rd_sid] = verify_counter[rd_sid] + 2;
+      end */
+
+  end
+
+  /*
     for( qq=0; qq<nstrms; qq=qq+1 ) begin
       always @ (negedge clk1x) begin
         if( o_rd_v == 1'b1 ) begin
@@ -459,9 +529,9 @@ module apl_top_tb;
             rd_d = o_rd_d;
             test_d = {data[verify_counter[qq]+1], data[verify_counter[qq]]};
             comparison[qq] = (rd_d == test_d);
-            //if( comparison[qq] === 1'b1 ) begin // === Also takes X and Z into account.
-            //  $display( "%0d - Stream %0d CORRECT!", $time-2, qq );
-            //end
+            if( comparison[qq] === 1'b1 ) begin // === Also takes X and Z into account.
+              $display( "%0d - Stream %0d CORRECT!", $time-2, qq );
+            end
             if( comparison[qq] !== 1'b1 ) begin // === Also takes X and Z into account.
               $display( "%0d - Stream %0d ERROR!", $time-2, qq );
               $display( "Expected = %h", test_d );
@@ -471,8 +541,9 @@ module apl_top_tb;
           end
         end
       end
-    end
-  endgenerate
+    end */
+
+  //endgenerate
 
   // Count the number of AFU read requests and responses made.
   integer rd_req_counter [0:nstrms-1];
@@ -485,39 +556,39 @@ module apl_top_tb;
       rd_req_counter[rd_req_int] = 0; // Number of accepted read requests.
       rd_rsp_counter[rd_req_int] = 0; // Number of accepted read responses.
       rd_v_req_counter[rd_req_int] = 0;
-      rd_v_rsp_counter[rd_req_int] = 0;
+      rd_v_rsp_counter[rd_req_int] = 0; // TODO: write code for this counter.
     end
   end
 
-  genvar yy;
+  // Update counters for verification.
+  integer rd_sid_int [0:nports-1];
+  genvar uu;
   generate
-    // TODO: for loop not needed, just as with BRAM channel write task calling.
-    // TODO: finish coding of rsp_v counter for not all response have been accepted.
-    for( yy=0; yy<nstrms; yy=yy+1 ) begin
+    for(uu=0; uu<nports; uu=uu+1) begin
       always @ (negedge clk1x) begin
+
         // Increment counter if a read request has been accepted.
-        if( (i_rd_v & i_rd_r) === 1'b1 ) begin
-          if( i_rd_sid == yy ) begin
-            rd_req_counter[yy] = rd_req_counter[yy] + 1;
-          end
+        if( (i_rd_v[uu] & i_rd_r[uu]) === 1'b1 ) begin
+          rd_req_counter[i_rd_sid_2d[uu]] = rd_req_counter[i_rd_sid_2d[uu]] + 1;
+
+          $display("%0d - rd_req_counter port %0d, stream %0d = %0d", $time, uu, i_rd_sid_2d[uu], rd_req_counter[i_rd_sid_2d[uu]]);
         end
 
         // Increment counter if a read request has been made.
-        if( i_rd_v === 1'b1 ) begin
-          if( i_rd_sid == yy ) begin
-            rd_v_req_counter[yy] = rd_v_req_counter[yy] + 1;
-          end
+        if( i_rd_v[uu] === 1'b1 ) begin
+          rd_v_req_counter[i_rd_sid_2d[uu]] = rd_v_req_counter[i_rd_sid_2d[uu]] + 1;
         end
 
-        // Increment counter if a read response has been received.
-        if( (o_rd_v & o_rd_r) === 1'b1 ) begin
-          if( o_rd_sid == yy ) begin
-            rd_rsp_counter[yy] = rd_rsp_counter[yy] + 1;
-          end
+        // Increment counter if a read response has been accepted.
+        if( (o_rd_v[uu] & o_rd_r[uu]) === 1'b1 ) begin
+          rd_rsp_counter[o_rd_sid_2d[uu]] = rd_rsp_counter[o_rd_sid_2d[uu]] + 1;
         end
+
       end
     end
   endgenerate
+
+
 
   // Test for concurrent channel writing.
   always @ (negedge clk1x) begin
@@ -570,8 +641,6 @@ module apl_top_tb;
     // Set interfaces to be ready.
     rest( 8 );
 
-
-
     // Functionally reset all streams.
     for( rst_sid=0; rst_sid<nstrms; rst_sid=rst_sid+1 ) begin
       tsk_func_rst( rst_sid );
@@ -581,9 +650,23 @@ module apl_top_tb;
 
 
     // Read random streams from one read port.
-    repeat( 1600*8 ) begin
-      tsk_afu_rd( 1, $urandom_range( nstrms-1, 0 ) ); // enable, sid
+    repeat( 1*8 ) begin
+      //tsk_afu_rd( 0, $urandom_range( 31, 0 ) ); // port id, sid
+      tsk_afu_rd( 0, 7 );
+      //tsk_afu_rd( 1, 7 );
+      #4;
     end
+
+/*
+    repeat( 4 ) begin
+      //tsk_afu_rd( 2'b11, 5, 5 ); // enable, sid0, sid1
+
+      // TODO: write for loop over nports with random valid and sid.
+      tsk_afu_rd( 0, $urandom_range(7, 5) ); // port, sid
+      tsk_afu_rd( 1, $urandom_range(7, 5) );
+      #4;
+    end
+*/
 
     rest( 100 );
 
@@ -643,15 +726,18 @@ module apl_top_tb;
 
     // Compare the read request and response counters.
     for(rd_req_int=0; rd_req_int<nstrms; rd_req_int=rd_req_int+1) begin
+      // Compare accepted reads versus accepted responses.
       //if( rd_req_counter[rd_req_int] === rd_rsp_counter[rd_req_int] )
-        //$display( "%0d - rd_cntr %0d PASS", $time, rd_req_int );
+      //  $display( "%0d - rd_cntr %0d PASS", $time, rd_req_int );
       // A read has been accepted, but was discarded. Therefore rd_req_counter is larger than rd_rsp_counter.
       if( rd_req_counter[rd_req_int] !== rd_rsp_counter[rd_req_int] )
         $display( "%0d - WARNING! STREAM %0d DISCARDED READ REQUESTS", $time, rd_req_int );
-
+      // Compare requested reads versus accepted reads.
       if( (rd_v_req_counter[rd_req_int] - rd_req_counter[rd_req_int]) !== 0 )
         $display( "%0d - WARNING! STREAM %0d has %0d unaccepted i_rd_v", $time, rd_req_int, rd_v_req_counter[rd_req_int] - rd_req_counter[rd_req_int] );
     end
+
+    // TODO: at end of simulation, print list of streams that have been reset and how many cache lines and what percentage has been read from them.
 
     // Terminate testbench.
     init( 4 );

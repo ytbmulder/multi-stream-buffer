@@ -31,7 +31,7 @@ module apl_top #
   parameter l2_ncl_width                = $clog2(l2_ncl),
   parameter channels                    = 4,                  // nstrms/l2_nstrms
   parameter channels_width              = $clog2(channels),
-  parameter ra_out_width                = channels_width+l2_nstrms_width // o_ra width.
+  parameter ra_out_width                = channels_width+l2_nstrms_width // o_ra width. // TODO: is equal to nstrms_width
 )
 (
   input                                 clk1x,
@@ -123,12 +123,27 @@ module apl_top #
   wire [nports*nstrms_width-1:0]  s1_l1_addr_sid;
   wire [nports*ptr_width-1:0]     s1_l1_addr_ptr;
 
-  // TODO: fix for multiple read ports (nports).
-  wire [channels_width-1:0]       s1_l1_addr_ch = s1_l1_addr_sid[nstrms_width-1:l1_ncl_width];
-  wire [l1_ncl_width-1:0]         s1_l1_addr_st = s1_l1_addr_sid[l1_ncl_width-1:0];
+  // BRAM rewiring.
+  wire [nports*channels_width-1:0]  s1_l1_addr_ch;
+  wire [nports*l2_nstrms_width-1:0] s1_l1_addr_st;
+  wire [nports*l1_ncl_width-1:0]    s1_l1_addr_cl;
+  wire [nports*clofs_width-1:0]     s1_l1_addr_of;
+  genvar rr;
+  generate
+    for(rr=0; rr<nports; rr=rr+1) begin : GEN_L1_WIRES
 
-  wire [l1_ncl_width-1:0]         s1_l1_addr_cl = s1_l1_addr_ptr[ptr_width-1:clofs_width];
-  wire [clofs_width-1:0]          s1_l1_addr_of = s1_l1_addr_ptr[clofs_width-1:0];
+      assign s1_l1_addr_ch[(rr+1)*channels_width-1:rr*channels_width] = s1_l1_addr_sid[(rr+1)*nstrms_width-1:rr*nstrms_width+l2_nstrms_width];
+      assign s1_l1_addr_st[(rr+1)*l2_nstrms_width-1:rr*l2_nstrms_width] = s1_l1_addr_sid[rr*nstrms_width+l2_nstrms_width-1:rr*nstrms_width];
+      assign s1_l1_addr_cl[(rr+1)*l1_ncl_width-1:rr*l1_ncl_width] = s1_l1_addr_ptr[(rr+1)*ptr_width-1:rr*ptr_width+clofs_width];
+      assign s1_l1_addr_of[(rr+1)*clofs_width-1:rr*clofs_width] = s1_l1_addr_ptr[rr*ptr_width+clofs_width-1:rr*ptr_width];
+
+    end
+  endgenerate
+
+  //wire [channels_width-1:0]       s1_l1_addr_ch = s1_l1_addr_sid[nstrms_width-1:l2_nstrms_width];
+  //wire [l2_nstrms_width-1:0]         s1_l1_addr_st = s1_l1_addr_sid[l2_nstrms_width-1:0];
+  //wire [l1_ncl_width-1:0]         s1_l1_addr_cl = s1_l1_addr_ptr[ptr_width-1:clofs_width];
+  //wire [clofs_width-1:0]          s1_l1_addr_of = s1_l1_addr_ptr[clofs_width-1:0];
 
   l1_ctrl_top # (
     .nports         (nports),
@@ -159,7 +174,8 @@ module apl_top #
     .i_rsp_r        (i_rsp_uram_r)
   );
 
-  bram_top # (
+  bram_top_wrapper # (
+    .nports     (nports),
     .DATA_WIDTH (DATA_WIDTH),
     .RAM_DEPTH  (RAM_DEPTH),
     .WAYS       (WAYS),
