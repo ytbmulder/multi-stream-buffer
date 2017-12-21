@@ -41,9 +41,24 @@ module l1_rd_port #
   input  [nstrms-1:0]               o_req_r
 );
 
+  // INPUT READ REGISTER
+  wire s1_v, s1_r;
+  wire [nstrms_width-1:0] s1_sid;
+  base_areg # (
+    .lbl(3'b110),
+    .width(nstrms_width)
+  ) is1_lat (
+    .clk(clk),.reset(reset),
+    .i_v(i_rd_v),
+    .i_r(i_rd_r),
+    .i_d(i_rd_sid),
+    .o_v(s1_v),
+    .o_r(s1_r),
+    .o_d(s1_sid)
+  );
+
   // Is this read port servicing a L1 read request?
-  assign o_rd_act = i_rd_v & i_rd_r;
-  //assign o_rd_act = s1_rd_v_test & i_rd_r; // TODO: fix for less power consumption.
+  assign o_rd_act = s1_v & s1_r;
 
   // Make sure rd_ports does not end up in a deadlock by invalidating reqs in this module.
   // Reqs are invalidated by not asserting the input valid signal of the acombine module.
@@ -55,19 +70,18 @@ module l1_rd_port #
   // In the case that not all reqs in the same cycle are invalidated, the AFU couldn't have known that the stream has ended because the vlat has to be updated. In the other case that a req is invalidated, that is when the L1 stream has ended, this is apparent to the AFU since the appropriate end of stream signal in l1_ctrl_top is asserted (since it is driven by a vlat and therefore stays asserted).
   // TODO: add discarded output signal (o_addr_discard) per read port and assert output address valid in that case.
   // TODO: BRAM we = ~o_addr_discard & o_addr_v and send _discard as aux data as well in latch_oe module since it is presented to the AFU. AFU interface: valid, ready, data and discard.
-  wire s1_rd_v = i_rd_v & ~invalidate_rd;
+  wire s1_rd_v = s1_v & ~invalidate_rd;
   wire s1_rd_v_test = out_of_bounds_rd_port ? 1'b0 : s1_rd_v;
 
-  // TODO: rename two output flows to seperate signals instead.
   // Synchronize the control between the calculated L1 address and the update vector for the L1 stream controllers.
   wire [1:0] s1a_v, s1a_r; // 0: global pointer update vector, 1: L1 address
-  base_acombine#(.ni(1),.no(2)) is1a_cmb(.i_v(s1_rd_v_test),.i_r(i_rd_r),.o_v(s1a_v),.o_r(s1a_r));
+  base_acombine#(.ni(1),.no(2)) is1a_cmb(.i_v(s1_rd_v_test),.i_r(s1_r),.o_v(s1a_v),.o_r(s1a_r));
 
   // GLOBAL POINTER UPDATE VECTOR
   // demux valid and ready signals of flow[0] based on the stream id.
   wire [nstrms-1:0] s1_sid_dec;
   base_decode_le # (.enc_width(nstrms_width),.dec_width(nstrms)) is1_sid_dec (
-    .din(i_rd_sid),.dout(s1_sid_dec),.en(1'b1)); // decodes the input stream id from a read port.
+    .din(s1_sid),.dout(s1_sid_dec),.en(1'b1)); // decodes the input stream id from a read port.
   wire [nstrms-1:0] s1_req_v;
   base_ademux # (.ways(nstrms)) is1_demux (
     .i_v(s1a_v[0]),.i_r(s1a_r[0]),.o_v(o_req_v),.o_r(o_req_r),.sel(s1_sid_dec));
@@ -78,7 +92,7 @@ module l1_rd_port #
   base_emux_le # (.ways(nstrms),.width(ptr_width)) is1_ptr_mux (
     .din(i_ptrs),       // array with all current (not updated) pointers.
     .dout(s1_ptr),      // current (not updated) pointer for stream s1_sid.
-    .sel(i_rd_sid)
+    .sel(s1_sid)
   );
 
   // Generate which stream ids to compare for a particular read port.
@@ -90,7 +104,7 @@ module l1_rd_port #
       wire [portid-1:0] s1_hit;
 
       for(i=0; i<portid; i=i+1) begin : GEN_HIT
-        assign s1_hit[i] = i_rd_acts[i] & (i_rd_sid == i_rd_sids[(i+1)*nstrms_width-1:i*nstrms_width]); // compare stream id for this read port to stream id from the previous read ports.
+        assign s1_hit[i] = i_rd_acts[i] & (s1_sid == i_rd_sids[(i+1)*nstrms_width-1:i*nstrms_width]); // compare stream id for this read port to stream id from the previous read ports.
       end
 
       wire [inc_width-1:0] s1_ptr_inc;
@@ -108,19 +122,18 @@ module l1_rd_port #
     end
   endgenerate
 
-  assign o_addr_sid = i_rd_sid;
+  assign o_addr_sid = s1_sid;
   //assign o_addr_sid = o_rd_act ? i_rd_sid : {nstrms_width{1'b0}}; // TODO: add condition to either output i_rd_sid or zero. Also for o_addr_ptr.
   assign o_addr_v = s1a_v[1];
   assign s1a_r[1] = o_addr_r;
 
-  // TODO: move the following two signals up in this file.
   // not valid L1 read (out of bounds) when L2 stream has ended & when reading last valid line (thus L1 has not yet ended) & when we carry and thus want to read the next valid line which doesnt exist.
   // TODO: use emux_le module for i_rst_end[] and i_single_v
   // ncl_req_zero is not required, since L2 already indicates its ready to be reset by asserting i_rst_end.
-  wire out_of_bounds_rd_port = i_rst_end[i_rd_sid] & i_single_v[i_rd_sid] & carry_bit;
+  wire out_of_bounds_rd_port = i_rst_end[s1_sid] & i_single_v[s1_sid] & carry_bit;
 
   // invalidate input reads when the requested L1 stream has ended.
-  wire invalidate_rd = i_l1_end[i_rd_sid];
+  wire invalidate_rd = i_l1_end[s1_sid];
 
 
 

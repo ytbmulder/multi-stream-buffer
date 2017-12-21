@@ -23,7 +23,7 @@ module l1_ctrl_top #
   // FUNCTIONAL STREAM RESET OUTPUT INTERFACE
   output [nstrms-1:0]             o_rst_v, // Valid reset passes through, but does not stay asserted.
   input  [nstrms-1:0]             o_rst_r,
-  // TODO: o_rst_end per stream. this signal comes from a reg and stays high.
+  output [nstrms-1:0]             o_rst_end, // Stays asserted if stream is ready to be reset.
 
   // AFU INTERFACE
   input  [nports-1:0]             i_rd_v,
@@ -45,56 +45,11 @@ module l1_ctrl_top #
   output [nstrms-1:0]             i_rsp_r
 );
 
-  // PARSE INITIALIZATION INTERFACE DATA
-  // TODO: merge with genvar j.
-  wire [nstrms-1:0] s1_rst_v, s1_rst_r;
-  wire [nstrms*clid_width-1:0] s1_rst_ea_b;
-
-  genvar m;
-  generate
-    for(m=0; m<nstrms; m=m+1) begin : GEN_REGS
-      base_areg # (
-        .lbl        (3'b000),
-        .width      (clid_width)
-        ) is1_rst_reg (
-        .clk        (clk),
-        .reset      (reset),
-        .i_v        (i_rst_v[m]),
-        .i_r        (i_rst_r[m]),
-        .i_d        (i_rst_ea_b[(m+1)*clid_width-1:m*clid_width]),
-        .o_v        (s1_rst_v[m]),
-        .o_r        (s1_rst_r[m]),
-        .o_d        (s1_rst_ea_b[(m+1)*clid_width-1:m*clid_width])
-      );
-  end
-  endgenerate
+  assign o_rst_end = l1_end;
 
   // COMPARE STREAM IDS AND CALCULATE BRAM ADDRESSES
   wire [nstrms*ptr_width-1:0] s1_ptrs; // holds all current pointers. assigned in l1_stream_ptr module.
   wire [nports*nstrms-1:0] s1_rd_v, s1_rd_r; // request signal between read port and l1_stream_ptr.
-
-  // INPUT READ REGISTER
-  // TODO: move this inside the l1_rd_port module.
-  wire [nports-1:0] s1_v, s1_r;
-  wire [nports*sid_width-1:0] s1_sid;
-
-  genvar d;
-  generate
-    for(d=0; d<nports; d=d+1) begin : GEN_INIT
-      base_areg # (
-        .lbl(3'b110),
-        .width(sid_width)
-      ) is1_lat (
-        .clk(clk),.reset(reset),
-        .i_v(i_rd_v[d]),
-        .i_r(i_rd_r[d]),
-        .i_d(i_rd_sid[(d+1)*sid_width-1:d*sid_width]),
-        .o_v(s1_v[d]),
-        .o_r(s1_r[d]),
-        .o_d(s1_sid[(d+1)*sid_width-1:d*sid_width])
-      );
-    end
-  endgenerate
 
   // global read port act signal
   wire [nports-1:0] s0_rd_acts;
@@ -118,11 +73,11 @@ module l1_ctrl_top #
         .clk                (clk),
         .reset              (reset),
         .i_rst_end          (i_rst_end),
-        .i_rd_v             (s1_v[i]),
-        .i_rd_r             (s1_r[i]),
-        .i_rd_sid           (s1_sid[(i+1)*sid_width-1:i*sid_width]),
+        .i_rd_v             (i_rd_v[i]),
+        .i_rd_r             (i_rd_r[i]),
+        .i_rd_sid           (i_rd_sid[(i+1)*sid_width-1:i*sid_width]),
         .i_rd_acts          (s0_rd_acts),
-        .i_rd_sids          (s1_sid), // array with all stream id read requests
+        .i_rd_sids          (i_rd_sid), // array with all stream id read requests
         .o_rd_act           (s0_rd_acts[i]),
         .i_ptrs             (s1_ptrs), // array with all current stream pointers
         .o_req_v            (s1_rd_v[(i+1)*nstrms-1:i*nstrms]),
@@ -152,20 +107,23 @@ module l1_ctrl_top #
       l1_stream_ptr # (
         .nports(nports),.ncl(ncl),.cl_size(cl_size)
         ) i_stream_ptr (
-        .o_single_v(o_single_v[j]),
-        .clk(clk), .reset(reset),
-        .i_rst_v(s1_rst_v[j]),.i_rst_r(s1_rst_r[j]),
-        .i_rst_ea_b(s1_rst_ea_b[(j+1)*clid_width-1:j*clid_width]),
-        .i_rst_end(i_rst_end[j]),
-        .o_rst_v(o_rst_v[j]),.o_rst_r(o_rst_r[j]),
-        .o_rst_end(l1_end[j]),
-        .i_rd_v(s1_rd_xpose_v[(j+1)*nports-1:j*nports]), // Valid signals for this stream.
-        .i_rd_r(s1_rd_xpose_r[(j+1)*nports-1:j*nports]), // Ready signals for this stream.
-        .o_d(s1_ptrs[(j+1)*ptr_width-1:j*ptr_width]), // Outputs current (not updated) pointer.
-        .o_clreq_v(s1_clreq_v[j]), // Request a new cache line for this stream from L2 URAM.
-        .o_clreq_r(s1_clreq_r[j]),
-        .i_clrsp_v(s2_clreq_v[j]), // The new cache line has been received from L2 URAM.
-        .i_clrsp_r(s2_clreq_r[j])
+        .o_single_v   (o_single_v[j]),
+        .clk          (clk),
+        .reset        (reset),
+        .i_rst_v      (i_rst_v[j]),
+        .i_rst_r      (i_rst_r[j]),
+        .i_rst_ea_b   (i_rst_ea_b[(j+1)*clid_width-1:j*clid_width]),
+        .i_rst_end    (i_rst_end[j]),
+        .o_rst_v      (o_rst_v[j]),
+        .o_rst_r      (o_rst_r[j]),
+        .o_rst_end    (l1_end[j]),
+        .i_rd_v       (s1_rd_xpose_v[(j+1)*nports-1:j*nports]), // Valid signals for this stream.
+        .i_rd_r       (s1_rd_xpose_r[(j+1)*nports-1:j*nports]), // Ready signals for this stream.
+        .o_global_ptr (s1_ptrs[(j+1)*ptr_width-1:j*ptr_width]), // Outputs current (not updated) pointer.
+        .o_clreq_v    (s1_clreq_v[j]), // Request a new cache line for this stream from L2 URAM.
+        .o_clreq_r    (s1_clreq_r[j]),
+        .i_clrsp_v    (s2_clreq_v[j]), // The new cache line has been received from L2 URAM.
+        .i_clrsp_r    (s2_clreq_r[j])
       );
     end
   endgenerate
