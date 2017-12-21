@@ -1,5 +1,4 @@
 // TODO: change module to only have control and memories. Interface can be attached seperately to easily change between OpenCAPI 3.0 and AXI for example.
-// TODO: add reset out to AFU interface. Also on L1 control and AFU interface (8x read port & this reset interface decoded)
 
 module apl_top #
 (
@@ -48,7 +47,7 @@ module apl_top #
   // FUNCTIONAL STREAM RESET OUTPUT INTERFACE
   output [nstrms-1:0]                   o_rst_v,
   input  [nstrms-1:0]                   o_rst_r,
-  output [nstrms-1:0]                   o_rst_end, // TODO: implement in L1
+  output [nstrms-1:0]                   o_rst_end,
 
   // AFU READ INTERFACE
   input  [nports-1:0]                   i_rd_v,
@@ -115,7 +114,6 @@ module apl_top #
   wire [nstrms*l1_ncl_width-1:0] s2_rst_ea_b;
 
   wire [nstrms-1:0] s0_rst_end;
-  assign o_rst_end = s0_rst_end; // TODO: should be L1 output.
 
   // BRAM wires
   wire [nports-1:0]               s1_l1_addr_v;
@@ -160,7 +158,7 @@ module apl_top #
     .i_rst_end      (s0_rst_end),
     .o_rst_v        (o_rst_v),
     .o_rst_r        (o_rst_r),
-    //.o_rst_end      (o_rst_end),
+    .o_rst_end      (o_rst_end),
     .i_rd_v         (i_rd_v),         // AFU READ INTERFACE
     .i_rd_r         (i_rd_r),
     .i_rd_sid       (i_rd_sid),
