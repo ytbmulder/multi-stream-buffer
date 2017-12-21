@@ -44,18 +44,22 @@ module l1_rd_port #
   // INPUT READ REGISTER
   wire s1_v, s1_r;
   wire [nstrms_width-1:0] s1_sid;
+  wire [nports*nstrms_width-1:0] s1_sids;
   base_areg # (
     .lbl(3'b110),
-    .width(nstrms_width)
+    .width(nports*nstrms_width+nstrms_width)
   ) is1_lat (
     .clk(clk),.reset(reset),
     .i_v(i_rd_v),
     .i_r(i_rd_r),
-    .i_d(i_rd_sid),
+    .i_d({i_rd_sids, i_rd_sid}),
     .o_v(s1_v),
     .o_r(s1_r),
-    .o_d(s1_sid)
+    .o_d({s1_sids, s1_sid})
   );
+
+
+//  assign s1_sid = s1_sids[(portid+1)*nstrms_width-1:portid*nstrms_width];
 
   // Is this read port servicing a L1 read request?
   assign o_rd_act = s1_v & s1_r;
@@ -104,7 +108,7 @@ module l1_rd_port #
       wire [portid-1:0] s1_hit;
 
       for(i=0; i<portid; i=i+1) begin : GEN_HIT
-        assign s1_hit[i] = i_rd_acts[i] & (s1_sid == i_rd_sids[(i+1)*nstrms_width-1:i*nstrms_width]); // compare stream id for this read port to stream id from the previous read ports.
+        assign s1_hit[i] = i_rd_acts[i] & (s1_sid == s1_sids[(i+1)*nstrms_width-1:i*nstrms_width]); // compare stream id for this read port to stream id from the previous read ports.
       end
 
       wire [inc_width-1:0] s1_ptr_inc;
