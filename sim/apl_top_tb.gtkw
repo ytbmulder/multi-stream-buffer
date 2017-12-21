@@ -1,25 +1,28 @@
 [*]
 [*] GTKWave Analyzer v3.3.82 (w)1999-2017 BSI
-[*] Wed Dec 20 13:15:34 2017
+[*] Thu Dec 21 09:56:57 2017
 [*]
 [dumpfile] "/Users/ytbmulder/Google Drive/Thesis/Verilog/stream-cache/work/apl_top_tb.vcd"
-[dumpfile_mtime] "Wed Dec 20 13:14:40 2017"
-[dumpfile_size] 44323244
+[dumpfile_mtime] "Thu Dec 21 09:34:29 2017"
+[dumpfile_size] 52259786
 [savefile] "/Users/ytbmulder/Google Drive/Thesis/Verilog/stream-cache/sim/apl_top_tb.gtkw"
-[timestart] 3444
+[timestart] 7350
 [size] 1440 852
 [pos] -1 -1
-*-4.000000 3485 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-4.000000 7374 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] apl_top_tb.
 [treeopen] apl_top_tb.GEN_URAM[0].IDUT.URAM.
 [treeopen] apl_top_tb.GEN_URAM[0].IDUT.URAM.GEN_WAYS[0].
+[treeopen] apl_top_tb.genblk5[1].
 [treeopen] apl_top_tb.IDUT.
-[treeopen] apl_top_tb.IDUT.is0_l1_ctrl_top.gen2[1].
+[treeopen] apl_top_tb.IDUT.is0_l1_ctrl_top.gen1[0].
+[treeopen] apl_top_tb.IDUT.is0_l1_ctrl_top.gen1[1].
+[treeopen] apl_top_tb.IDUT.is0_l1_ctrl_top.gen1[1].iport.
 [treeopen] apl_top_tb.IDUT.is0_l1_ctrl_top.gen2[21].
-[treeopen] apl_top_tb.IDUT.is0_l2_ctrl_top.GEN_PTR[1].
+[treeopen] apl_top_tb.IDUT.is0_l1_ctrl_top.gen2[3].
 [treeopen] apl_top_tb.IDUT.is0_l2_ctrl_top.GEN_PTR[21].
 [sst_width] 193
-[signals_width] 479
+[signals_width] 485
 [sst_expanded] 1
 [sst_vpaned_height] 301
 @28
@@ -37,20 +40,45 @@ apl_top_tb.IDUT.i_rst_sid[4:0]
 apl_top_tb.IDUT.o_rst_end[31:0]
 @200
 -
+@28
+apl_top_tb.IDUT.i_rd_v[1:0]
 @24
 apl_top_tb.\i_rd_sid_2d[0][4:0]
-@22
 apl_top_tb.\i_rd_sid_2d[1][4:0]
 @200
 -
+@29
+apl_top_tb.IDUT.o_rd_v[1:0]
 @24
 apl_top_tb.\o_rd_sid_2d[0][4:0]
 @22
 apl_top_tb.\o_rd_d_2d[0][127:0]
+@24
 apl_top_tb.\o_rd_sid_2d[1][4:0]
+@22
 apl_top_tb.\o_rd_d_2d[1][127:0]
 @200
 -
 -INTERNAL
+@24
+apl_top_tb.IDUT.is0_l2_ctrl_top.GEN_PTR[3].is0_stream_control.s0_ncl_req[7:0]
+apl_top_tb.IDUT.is0_l2_ctrl_top.GEN_PTR[3].is0_stream_control.s0_ncl_valid[7:0]
+apl_top_tb.IDUT.is0_l1_ctrl_top.gen2[3].i_stream_ptr.s0_ncl_req[4:0]
+apl_top_tb.IDUT.is0_l1_ctrl_top.gen2[3].i_stream_ptr.s0_ncl[4:0]
+@200
+-
+-RD PORT 1
+@28
+apl_top_tb.IDUT.is0_l1_ctrl_top.gen1[1].iport.i_rd_v
+apl_top_tb.IDUT.is0_l1_ctrl_top.gen1[1].iport.s1_rd_v
+apl_top_tb.IDUT.is0_l1_ctrl_top.gen1[1].iport.s1_rd_v_test
+apl_top_tb.IDUT.is0_l1_ctrl_top.gen1[1].iport.out_of_bounds_rd_port
+@22
+apl_top_tb.IDUT.is0_l1_ctrl_top.gen1[1].iport.i_rst_end[31:0]
+@28
+apl_top_tb.IDUT.is0_l1_ctrl_top.gen1[1].iport.i_single_v[31:0]
+apl_top_tb.IDUT.is0_l1_ctrl_top.gen1[1].iport.o_addr_ptr[6:0]
+apl_top_tb.IDUT.is0_l1_ctrl_top.gen1[1].iport.GEN_ADDR_PTR.add[3:0]
+apl_top_tb.IDUT.is0_l1_ctrl_top.gen1[1].iport.carry_bit
 [pattern_trace] 1
 [pattern_trace] 0

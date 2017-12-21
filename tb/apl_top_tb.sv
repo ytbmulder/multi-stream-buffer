@@ -8,7 +8,7 @@ module apl_top_tb;
   // Stream cache parameters
   parameter nstrms                      = 32;
   parameter nstrms_width                = $clog2(nstrms);
-  parameter nports                      = 4;                  // Number of L1 read ports.
+  parameter nports                      = 2;                  // Number of L1 read ports.
   parameter cl_size                     = 8;                  // number of reads per cacheline - must be at least as big as the number of read ports
   parameter DATA_WIDTH                  = 8*8;                // 8 bytes per element
   parameter RAM_DEPTH                   = 512;                // double pump -> 256 16B
@@ -636,7 +636,8 @@ module apl_top_tb;
 
     tsk_func_rst(3);
     rest(1000);
-    tsk_func_rst(21);
+    //tsk_func_rst(21);
+    //rest(100);
 
     // Read random streams from two read ports.
     repeat( 191*8 +4 ) begin
@@ -645,8 +646,8 @@ module apl_top_tb;
       tsk_afu_rd( 0, 3 );
       tsk_afu_rd( 1, 3 );
 
-      tsk_afu_rd( 2, 21 );
-      tsk_afu_rd( 3, 21 );
+      //tsk_afu_rd( 2, 21 );
+      //tsk_afu_rd( 3, 21 );
       #4;
     end
 
@@ -726,17 +727,29 @@ module apl_top_tb;
 
 
 
+    // Print stream statistics.
+    $display(); // Print empty line.
+    $display( "SIMULATION SUMMARY" );
+
     // Compare the read request and response counters.
     for(rd_req_int=0; rd_req_int<nstrms; rd_req_int=rd_req_int+1) begin
+      // Print total number of reads. Only if reads for that stream have been made.
+      if( rd_v_req_counter[rd_req_int] !== 0 ) begin
+        $display( "STREAM %0d:", rd_req_int );
+        $display( "Elements:     %0d", (rst_ea_e-rst_ea_b)*8 );
+        $display( "Requested:    %0d", rd_v_req_counter[rd_req_int] );
+        $display( "Responded:    %0d = %0d\%", rd_rsp_counter[rd_req_int], rd_rsp_counter[rd_req_int]/((rst_ea_e-rst_ea_b)*8)*100 );
+      end
+
       // Compare accepted reads versus accepted responses.
       //if( rd_req_counter[rd_req_int] === rd_rsp_counter[rd_req_int] )
       //  $display( "%0d - rd_cntr %0d PASS", $time, rd_req_int );
       // A read has been accepted, but was discarded. Therefore rd_req_counter is larger than rd_rsp_counter.
       if( rd_req_counter[rd_req_int] !== rd_rsp_counter[rd_req_int] )
-        $display( "%0d - WARNING! STREAM %0d DISCARDED %0d READ REQUESTS", $time, rd_req_int, (rd_req_counter[rd_req_int] - rd_rsp_counter[rd_req_int]) );
+        $display( "WARNING! Discarded reads: %0d", (rd_req_counter[rd_req_int] - rd_rsp_counter[rd_req_int]) );
       // Compare requested reads versus accepted reads.
       if( (rd_v_req_counter[rd_req_int] - rd_req_counter[rd_req_int]) !== 0 )
-        $display( "%0d - WARNING! STREAM %0d has %0d unaccepted i_rd_v", $time, rd_req_int, rd_v_req_counter[rd_req_int] - rd_req_counter[rd_req_int] );
+        $display( "WARNING! STREAM %0d has %0d unaccepted i_rd_v", rd_req_int, rd_v_req_counter[rd_req_int] - rd_req_counter[rd_req_int] );
     end
 
     // TODO: at end of simulation, print list of streams that have been reset and how many cache lines and what percentage has been read from them.
