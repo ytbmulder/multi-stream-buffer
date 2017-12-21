@@ -11,7 +11,10 @@ module bram_top #
   parameter   l1_nstrms               = nstrms/channels,  // Number of streams per channel.
   parameter   l1_nstrms_width         = $clog2(l1_nstrms),
   parameter   l1_ncl                  = 16,               // Number of cache lines per stream.
-  parameter   l1_ncl_width            = $clog2(l1_ncl)
+  parameter   l1_ncl_width            = $clog2(l1_ncl),
+  parameter   ra_out_width            = channels_width+l1_nstrms_width // o_ra width.
+
+  // TODO: extend to multiple nports.
 )
 (
   input                               clk1x,
@@ -27,9 +30,11 @@ module bram_top #
   input  [WAYS_WIDTH-1:0]             i_ra_of, // Offset
 
   // Output read interface.
+  // TODO: generate for nports wide and change outputs accordingly.
   output                              o_v,
   input                               o_r,
   output [2*DATA_WIDTH-1:0]           o_rd,
+  output [ra_out_width-1:0]           o_ra,
 
   // Input write interface.
   input  [channels-1:0]               i_we,
@@ -44,6 +49,9 @@ module bram_top #
   wire [l1_ncl_width-1:0]    s1_ra_cl;
   wire [WAYS_WIDTH-1:0]      s1_ra_of;
 
+  wire [ra_out_width-1:0]    s1_ra_out = {s1_ra_ch, s1_ra_st};
+
+  // TODO: width incorrent when channels = 1.
   base_areg # (
     .width  (channels_width+WAYS_WIDTH+ADDR_WIDTH-1),
     .lbl    (3'b110)
@@ -88,18 +96,19 @@ module bram_top #
   // BRAM control path.
   wire s2_v;
   wire s2_r = 1'b1; // always ready, taken care of by credits
+  wire [ra_out_width-1:0] s2_ra_out;
   base_areg # (
-    .width  (1),
+    .width  (ra_out_width),
     .lbl    (3'b110)
     ) S1B_FF (
     .clk    (clk1x),
     .reset  (reset),
     .i_v    (st_v),
     .i_r    (st_r),
-    .i_d    (1'b0),
+    .i_d    (s1_ra_out),
     .o_v    (s2_v),
     .o_r    (s2_r),
-    .o_d    ()
+    .o_d    (s2_ra_out)
   );
 
   // BRAM primitive instantiation.
@@ -130,26 +139,35 @@ module bram_top #
     end
   endgenerate
 
-  // Channel select MUX.
-  wire [channels_width-1:0] s2_sel;
-  base_vlat # (
-    .width  (channels_width)
-    ) CH_VLAT (
-    .clk    (clk1x),
-    .reset  (reset),
-    .din    (s1_ra_ch),
-    .q      (s2_sel)
-  );
-
   wire [DATA_WIDTH-1:0] s2a_rd;
-  base_emux_le # (
-    .width (DATA_WIDTH),
-    .ways  (channels)
-    ) CH_MUX (
-    .din   (s2_rd),
-    .sel   (s2_sel),
-    .dout  (s2a_rd)
-  );
+
+  generate
+    if( channels == 1 ) begin
+      // One channel, therefore no MUX required.
+      assign s2a_rd = s2_rd;
+    end
+    else if( channels > 1 ) begin
+      // Channel select MUX.
+      wire [channels_width-1:0] s2_sel;
+      base_vlat # (
+        .width  (channels_width)
+        ) CH_VLAT (
+        .clk    (clk1x),
+        .reset  (reset),
+        .din    (s1_ra_ch),
+        .q      (s2_sel)
+      );
+
+      base_emux_le # (
+        .width (DATA_WIDTH),
+        .ways  (channels)
+        ) CH_MUX (
+        .din   (s2_rd),
+        .sel   (s2_sel),
+        .dout  (s2a_rd)
+      );
+    end
+  endgenerate
 
   // Alignment reigster.
   wire [DATA_WIDTH-1:0] s2b_rd;
@@ -167,17 +185,17 @@ module bram_top #
   // Sink
   base_acredit_snk # (
     .credits    (crdts),
-    .width      (2*DATA_WIDTH),
+    .width      (2*DATA_WIDTH + ra_out_width),
     .output_reg (0)
     ) SINK (
     .clk (clk1x),
     .reset (reset),
     .i_v (s2_v),
-    .i_d (s3_rd),
+    .i_d ({s3_rd, s2_ra_out}),
     .i_c (s1_credit),
     .o_v (o_v),
     .o_r (o_r),
-    .o_d (o_rd)
+    .o_d ({o_rd, o_ra})
   );
 
 endmodule
