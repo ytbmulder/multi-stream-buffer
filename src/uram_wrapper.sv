@@ -105,7 +105,7 @@ module uram_wrapper #
 
 
 
-/*
+
   `else
     // BRAM latency parameter.
     localparam BRAM_LATENCY = 2;
@@ -114,10 +114,10 @@ module uram_wrapper #
     xpm_memory_sdpram # (
       // Common module parameters
       .MEMORY_SIZE        (DATA_WIDTH*RAM_DEPTH),     //positive integer
-      .MEMORY_PRIMITIVE   ("block"),                  //string; "auto", "distributed", "block" or "ultra";
+      .MEMORY_PRIMITIVE   ("ultra"),                  //string; "auto", "distributed", "block" or "ultra";
       .CLOCKING_MODE      ("common_clock"),           //string; "common_clock", "independent_clock"
       .MEMORY_INIT_FILE   ("none"),                   //string; "none" or "<filename>.mem"
-      .MEMORY_INIT_PARAM  (""), 	                    //string;
+      .MEMORY_INIT_PARAM  (""), 	                  //string;
       .USE_MEM_INIT       (0),                        //integer; 0,1
       .WAKEUP_TIME        ("disable_sleep"),          //string; "disable_sleep" or "use_sleep_pin"
       .MESSAGE_CONTROL    (1),                        //integer; 0,1
@@ -158,7 +158,7 @@ module uram_wrapper #
       .sbiterrb       (),
       .dbiterrb       ()
     );
-*/
+
   `endif
 
 endmodule //uram_wrapper
