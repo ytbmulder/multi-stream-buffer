@@ -109,6 +109,7 @@ module l2_ctrl_top #
         .o_d    () // not used
       );
 
+/*
       // Read request input register.
       wire s1_rd_v, s1_rd_r;
       base_areg # (.lbl(3'b110),.width(1)) is1_rd_reg (
@@ -121,6 +122,7 @@ module l2_ctrl_top #
         .o_r    (s1_rd_r),
         .o_d    () // not used
       );
+*/
 
       l2_stream_ptr # (
         .addr_width (addr_width),
@@ -138,8 +140,8 @@ module l2_ctrl_top #
         .o_rst_r    (o_rst_r[i]),
         .o_rst_ea_b (o_rst_ea_b[(i+1)*clid_width-1:i*clid_width]),
         .o_rst_end  (o_rst_end[i]),
-        .i_rd_v     (s1_rd_v),
-        .i_rd_r     (s1_rd_r),
+        .i_rd_v     (i_rd_v[i]),
+        .i_rd_r     (i_rd_r[i]),
         .o_addr_v   (s1_addr_v[i]),
         .o_addr_r   (s1_addr_r[i]),
         .o_addr_ptr (s1_addr_ptr[(i+1)*l2_ncl_width-1:i*l2_ncl_width]),

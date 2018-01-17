@@ -149,40 +149,6 @@ module apl_top_tb;
 
 
 
-  // L2 write interface register and MUX.
-  wire [L2_RAM_DEPTH_WIDTH+channels_width-1:0] s1_wa;
-  wire [WAYS*DATA_WIDTH-1:0] s1_wd;
-  wire s1_reg_v, s1_reg_r;
-  base_areg # ( .lbl(3'b110),.width(L2_RAM_DEPTH_WIDTH+channels_width+WAYS*DATA_WIDTH)) write_reg (
-      .clk(clk2x),.reset(reset),
-      .i_v(i_we),.i_r(),
-      .i_d({i_wa, i_wd}),
-      .o_v(s1_reg_v),.o_r(s1_reg_r),
-      .o_d({s1_wa, s1_wd})
-  );
-
-  // Select decode module for the MUX.
-  wire [channels-1:0] s1_ch_dec;
-  base_decode_le#(.enc_width(channels_width),.dec_width(channels)) is1_rsp_dec (
-    .din        (s1_wa[L2_RAM_DEPTH_WIDTH+channels_width-1]),
-    .dout       (s1_ch_dec),
-    .en         (1'b1)
-  );
-
-  // Send response to L1 stream from L2 URAM.
-  wire [channels-1:0] i_we_dec;
-  base_ademux # (
-    .ways(channels)
-  ) is1_rsp_demux_bla (
-    .i_v(s1_reg_v),
-    .i_r(s1_reg_r),
-    .sel(s1_ch_dec),
-    .o_v(i_we_dec),
-    .o_r(2'b11)
-  );
-
-
-
   // HOST INTERFACE
   // Loop back req and rsp for OpenCAPI 3.0.
   wire                       s1_req_v;
@@ -199,40 +165,6 @@ module apl_top_tb;
       .i_v(s1_req_v),.i_r(s1_req_r),.i_d(s1_req_sid),
       .o_v(s2_rsp_v),.o_r(s2_rsp_r),.o_d(s2_rsp_sid)
   );
-
-
-
-  // Generate URAM modules for L2.
-  wire [nstrms-1:0] i_rsp_uram_v, i_rsp_uram_r;
-  wire [channels-1:0] s1_l1_we;
-  wire [channels*ADDR_WIDTH-1:0] s1_l1_wa;
-  wire [channels*WAYS*DATA_WIDTH-1:0] s1_l1_wd;
-  genvar gg;
-  generate
-    for(gg=0; gg<channels; gg=gg+1) begin : GEN_URAM
-      uram_top IDUT (
-        .clk1x          (clk1x),
-        .clk2x          (clk2x),
-        .reset          (reset),
-
-        .i_l2_addr_v    (o_l2_addr_v[gg]),
-        .i_l2_addr_r    (o_l2_addr_r[gg]),
-        .i_l2_addr_sid  (o_l2_addr_sid[(gg+1)*l2_nstrms_width-1:gg*l2_nstrms_width]),
-        .i_l2_addr_ptr  (o_l2_addr_ptr[(gg+1)*l2_ncl_width-1:gg*l2_ncl_width]),
-
-        .o_rsp_v        (i_rsp_uram_v[(gg+1)*l2_nstrms-1:gg*l2_nstrms]),
-        .o_rsp_r        (i_rsp_uram_r[(gg+1)*l2_nstrms-1:gg*l2_nstrms]),
-
-        .o_we           (s1_l1_we[gg]),
-        .o_wa           (s1_l1_wa[(gg+1)*ADDR_WIDTH-1:gg*ADDR_WIDTH]),
-        .o_wd           (s1_l1_wd[(gg+1)*WAYS*DATA_WIDTH-1:gg*WAYS*DATA_WIDTH]),
-
-        .i_we           (i_we_dec[gg]),
-        .i_wa           (s1_wa[L2_RAM_DEPTH_WIDTH-1:0]),
-        .i_wd           (s1_wd)
-      );
-    end
-  endgenerate
 
 
 
@@ -274,14 +206,9 @@ module apl_top_tb;
     .o_rd_d         (o_rd_d),
     .o_rd_sid       (o_rd_sid),
 
-    .o_l2_addr_v    (o_l2_addr_v),
-    .o_l2_addr_r    (o_l2_addr_r),
-    .o_l2_addr_sid  (o_l2_addr_sid),
-    .o_l2_addr_ptr  (o_l2_addr_ptr),
-
-    .i_we           (s1_l1_we), // Write to L1.
-    .i_wa           (s1_l1_wa),
-    .i_wd           (s1_l1_wd),
+    .i_we           (i_we), // Write to L1.
+    .i_wa           (i_wa),
+    .i_wd           (i_wd),
 
     .o_req_v        (s1_req_v),
     .o_req_r        (s1_req_r),
@@ -290,10 +217,7 @@ module apl_top_tb;
 
     .i_rsp_v        (s2_rsp_v),
     .i_rsp_r        (s2_rsp_r),
-    .i_rsp_sid      (s2_rsp_sid),
-
-    .i_rsp_uram_v   (i_rsp_uram_v),
-    .i_rsp_uram_r   (i_rsp_uram_r)
+    .i_rsp_sid      (s2_rsp_sid)
   );
 
 
@@ -587,6 +511,7 @@ module apl_top_tb;
 
   // HOST WRITE BEHAVIOUR MODEL
   // Initialise l1_counters depending on the stream number.
+  // TODO: use o_req_ea instead of this counter to improve the verification infrastructure.
   reg [addr_width-1:0] l1_counter [0:nstrms-1];
   integer rr;
   initial begin

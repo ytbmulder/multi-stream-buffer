@@ -30,7 +30,10 @@ module apl_top #
   parameter l2_ncl_width                = $clog2(l2_ncl),
   parameter channels                    = 4,                  // nstrms/l2_nstrms
   parameter channels_width              = $clog2(channels),
-  parameter ra_out_width                = channels_width+l2_nstrms_width // o_ra width. // TODO: is equal to nstrms_width
+  parameter ra_out_width                = channels_width+l2_nstrms_width, // o_ra width. // TODO: is equal to nstrms_width
+
+  parameter L2_RAM_DEPTH                = 4096,
+  parameter L2_RAM_DEPTH_WIDTH          = $clog2(L2_RAM_DEPTH)
 )
 (
   input                                 clk1x,
@@ -60,17 +63,6 @@ module apl_top #
   output [nports*2*DATA_WIDTH-1:0]      o_rd_d,
   output [nports*ra_out_width-1:0]      o_rd_sid,
 
-  // L1 WRITE INTERFACE
-  input  [channels-1:0]                 i_we,
-  input  [channels*ADDR_WIDTH-1:0]      i_wa,
-  input  [channels*WAYS*DATA_WIDTH-1:0] i_wd,
-
-  // L2 READ INTERFACE
-  output [channels-1:0]                 o_l2_addr_v,
-  input  [channels-1:0]                 o_l2_addr_r,
-  output [channels*l2_nstrms_width-1:0] o_l2_addr_sid,
-  output [channels*l2_ncl_width-1:0]    o_l2_addr_ptr,
-
   // HOST REQUEST INTERFACE
   output                                o_req_v,
   input                                 o_req_r,
@@ -82,9 +74,10 @@ module apl_top #
   output                                i_rsp_r,
   input  [nstrms_width-1:0]             i_rsp_sid,
 
-  // RESPONSE FROM URAM
-  input  [nstrms-1:0]                   i_rsp_uram_v,
-  output [nstrms-1:0]                   i_rsp_uram_r
+  // L2 WRITE INTERFACE
+  input                                         i_we,
+  input [L2_RAM_DEPTH_WIDTH+channels_width-1:0] i_wa,
+  input [WAYS*DATA_WIDTH-1:0]                   i_wd
 );
 
   // FUNCTIONAL STREAM RESET INTERFACE
@@ -138,11 +131,7 @@ module apl_top #
     end
   endgenerate
 
-  //wire [channels_width-1:0]       s1_l1_addr_ch = s1_l1_addr_sid[nstrms_width-1:l2_nstrms_width];
-  //wire [l2_nstrms_width-1:0]         s1_l1_addr_st = s1_l1_addr_sid[l2_nstrms_width-1:0];
-  //wire [l1_ncl_width-1:0]         s1_l1_addr_cl = s1_l1_addr_ptr[ptr_width-1:clofs_width];
-  //wire [clofs_width-1:0]          s1_l1_addr_of = s1_l1_addr_ptr[clofs_width-1:0];
-
+  wire [nstrms-1:0] i_rsp_uram_v, i_rsp_uram_r;
   l1_ctrl_top # (
     .nports         (nports),
     .nstrms         (nstrms),
@@ -172,6 +161,11 @@ module apl_top #
     .i_rsp_r        (i_rsp_uram_r)
   );
 
+  // Write signals.
+  input  [channels-1:0]                 s1_l1_we;
+  input  [channels*ADDR_WIDTH-1:0]      s1_l1_wa;
+  input  [channels*WAYS*DATA_WIDTH-1:0] s1_l1_wd;
+
   bram_top_wrapper # (
     .nports     (nports),
     .DATA_WIDTH (DATA_WIDTH),
@@ -194,10 +188,16 @@ module apl_top #
     .o_r        (o_rd_r),
     .o_rd       (o_rd_d),
     .o_ra       (o_rd_sid),
-    .i_we       (i_we),
-    .i_wa       (i_wa),
-    .i_wd       (i_wd)
+    .i_we       (s1_l1_we),
+    .i_wa       (s1_l1_wa),
+    .i_wd       (s1_l1_wd)
   );
+
+  // L2 READ INTERFACE
+  wire [channels-1:0]                 o_l2_addr_v;
+  wire [channels-1:0]                 o_l2_addr_r;
+  wire [channels*l2_nstrms_width-1:0] o_l2_addr_sid;
+  wire [channels*l2_ncl_width-1:0]    o_l2_addr_ptr;
 
   l2_ctrl_top # (
     .addr_width     (addr_width),
@@ -231,5 +231,68 @@ module apl_top #
     .i_rsp_r        (i_rsp_r),
     .i_rsp_sid      (i_rsp_sid)
   );
+
+  // L2 write interface register and MUX.
+  wire [L2_RAM_DEPTH_WIDTH+channels_width-1:0] s1_wa;
+  wire [WAYS*DATA_WIDTH-1:0] s1_wd;
+  wire s1_reg_v, s1_reg_r;
+  base_areg # ( .lbl(3'b110),.width(L2_RAM_DEPTH_WIDTH+channels_width+WAYS*DATA_WIDTH)) write_reg (
+      .clk(clk2x),.reset(reset),
+      .i_v(i_we),.i_r(),
+      .i_d({i_wa, i_wd}),
+      .o_v(s1_reg_v),.o_r(s1_reg_r),
+      .o_d({s1_wa, s1_wd})
+  );
+
+  // Select decode module for the MUX.
+  wire [channels-1:0] s1_ch_dec;
+  base_decode_le#(.enc_width(channels_width),.dec_width(channels)) is1_rsp_dec (
+    .din        (s1_wa[L2_RAM_DEPTH_WIDTH+channels_width-1]),
+    .dout       (s1_ch_dec),
+    .en         (1'b1)
+  );
+
+  // Send response to L1 stream from L2 URAM.
+  wire [channels-1:0] i_we_dec;
+  base_ademux # (
+    .ways(channels)
+  ) is1_rsp_demux_bla (
+    .i_v(s1_reg_v),
+    .i_r(s1_reg_r),
+    .sel(s1_ch_dec),
+    .o_v(i_we_dec),
+    .o_r(2'b11)
+  );
+
+  // Generate URAM modules for L2.
+  wire [channels-1:0] s1_l1_we;
+  wire [channels*ADDR_WIDTH-1:0] s1_l1_wa;
+  wire [channels*WAYS*DATA_WIDTH-1:0] s1_l1_wd;
+  genvar gg;
+  generate
+    for(gg=0; gg<channels; gg=gg+1) begin : GEN_URAM
+      uram_top IDUT (
+        .clk1x          (clk1x),
+        .clk2x          (clk2x),
+        .reset          (reset),
+
+        .i_l2_addr_v    (o_l2_addr_v[gg]),
+        .i_l2_addr_r    (o_l2_addr_r[gg]),
+        .i_l2_addr_sid  (o_l2_addr_sid[(gg+1)*l2_nstrms_width-1:gg*l2_nstrms_width]),
+        .i_l2_addr_ptr  (o_l2_addr_ptr[(gg+1)*l2_ncl_width-1:gg*l2_ncl_width]),
+
+        .o_rsp_v        (i_rsp_uram_v[(gg+1)*l2_nstrms-1:gg*l2_nstrms]),
+        .o_rsp_r        (i_rsp_uram_r[(gg+1)*l2_nstrms-1:gg*l2_nstrms]),
+
+        .o_we           (s1_l1_we[gg]),
+        .o_wa           (s1_l1_wa[(gg+1)*ADDR_WIDTH-1:gg*ADDR_WIDTH]),
+        .o_wd           (s1_l1_wd[(gg+1)*WAYS*DATA_WIDTH-1:gg*WAYS*DATA_WIDTH]),
+
+        .i_we           (i_we_dec[gg]),
+        .i_wa           (s1_wa[L2_RAM_DEPTH_WIDTH-1:0]),
+        .i_wd           (s1_wd)
+      );
+    end
+  endgenerate
 
 endmodule
