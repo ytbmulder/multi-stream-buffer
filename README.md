@@ -42,3 +42,5 @@ If this project has helped you in any way, please consider to cite it.
   month   = 1
 }
 ```
+A PDF is available [here](https://repository.tudelft.nl/islandora/object/uuid%3A75dd920a-0e50-49c9-9982-70ef7dab7a92).
+A GitHub repository is available [here](https://github.com/ytbmulder/msc-thesis).
