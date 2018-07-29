@@ -1,5 +1,5 @@
-# opencapi-stream-buffer
-OpenCAPI stream buffer using [akgmartin](https://github.com/akgmartin) his methodology and base cell library.
+# multi-stream-buffer
+Multi stream buffer using [akgmartin](https://github.com/akgmartin) his methodology and base cell library.
 
 ## Getting Started
 The following instructions explain how to obtain the prerequisites for this project.
@@ -32,11 +32,13 @@ The source code is compiled and gtkwave is started with the corresponding wave c
 
 ## Citation
 If this project has helped you in any way, please consider to cite it.
-
-  @mastersthesis{mulder2018,
-    author        = {Y.T.B. Mulder},
-    title         = {xxx},
-    school        = {Delft University of Technology},
-    address       = {Delft, The Netherlands},
-    year          = {2018}
-  }
+```text
+@mastersthesis{mulder2018feeding,
+  author  = {Mulder, Y.T.B.},
+  title   = {Feeding High-Bandwidth Streaming-Based FPGA Accelerators},
+  school  = {Delft University of Technology},
+  year    = 2018,
+  address = {Mekelweg 4, 2628 CD Delft, The Netherlands},
+  month   = 1
+}
+```
