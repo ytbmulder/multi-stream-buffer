@@ -169,6 +169,7 @@ module interface_tag #
   wire [data_width-1:0] s2_rsp_data;
   wire s2_sram_en;
 
+  // TODO: two times .width()?
   base_alatch_oe # (
     .width     (0),
     .width (data_width+tag_width)

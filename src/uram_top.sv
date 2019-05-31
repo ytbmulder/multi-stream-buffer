@@ -88,7 +88,7 @@ module uram_top #
   wire [l2_nstrms_width-1:0]  s2_l2_addr_sid;
   wire [l1_ncl_width-1:0]     s2_l1_ptr;
   base_areg # (
-    .lbl(3'b110),
+    .lbl(3'b111),
     .width(l2_nstrms_width+l1_ncl_width)
     ) control_path_reg (
     .clk    (clk1x),
@@ -122,6 +122,7 @@ module uram_top #
 
   // Delay q with two half cycles.
   wire q1, qd; // delayed q
+  wire q2, q3;
   base_vlat # (
     .width  (1)
     ) QD1 (
@@ -137,13 +138,33 @@ module uram_top #
     .clk    (clk2x),
     .reset  (reset),
     .din    (q1),
-    .q      (qd)
+    .q      (q2)
+  );
+
+  // Additional routing cycle.
+  wire [WAYS*DATA_WIDTH-1:0] s2a_rd, s3_rd;
+  base_vlat # (
+    .width  (WAYS*DATA_WIDTH+1)
+    ) QD3 (
+    .clk    (clk2x),
+    .reset  (reset),
+    .din    ({q2, s2_rd}),
+    .q      ({q3, s2a_rd})
+  );
+
+  base_vlat # (
+    .width  (WAYS*DATA_WIDTH+1)
+    ) QD4 (
+    .clk    (clk2x),
+    .reset  (reset),
+    .din    ({q3, s2a_rd}),
+    .q      ({qd, s3_rd})
   );
 
   wire s2_act = s2_v & s2_r; // = o_we
   assign o_we = s2_act;
   assign o_wa = {s2_l2_addr_sid, s2_l1_ptr, qd};
-  assign o_wd = s2_rd;
+  assign o_wd = s3_rd;
 
 
 

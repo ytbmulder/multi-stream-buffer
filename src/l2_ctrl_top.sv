@@ -265,6 +265,6 @@ module l2_ctrl_top #
     .sel    (s1_rsp_sid_dec)
   );
 
-  assign i_rsp_r = 1'b1;
+  //assign i_rsp_r = 1'b1; // Internally always asserted by l2_stream_ptr.
 
 endmodule

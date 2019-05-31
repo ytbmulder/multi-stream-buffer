@@ -65,6 +65,15 @@ module bram_wrapper #
         dob <= ram[addrb];
     end
 
+    // After reset the BRAM contains only zeros.
+    integer i;
+    always @(posedge clk or posedge reset) begin
+      if (reset) begin
+        for(i=0; i<RAM_DEPTH; i=i+1)
+          ram[i] <= {DATA_WIDTH{1'b0}};
+      end
+    end
+
     // Additional BRAM internal register. Captured by BRAM_LATENCY.
     base_vlat_en # (
       .width (DATA_WIDTH)

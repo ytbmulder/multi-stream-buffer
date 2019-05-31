@@ -59,7 +59,7 @@ module l1_stream_ptr #
   assign o_rst_end = s0_en_rst;
 
   // ACCEPT READ REQUESTS
-  wire [ncl_width-1:0] s0_ncl_req; // how many valid cachelines do we need to request
+  wire [ncl_width-1:0] s0_ncl_req; // how many valid cachelines do we need to request TODO: this signal is restarted after the stream has finished which is not allowed. The same happens for L2.
   wire [ncl_width-1:0] s0_ncl; // how many valid cachelines do we have
   wire [clid_width-1:0] s0_clid; // what cacheline are we currently reading from
   wire [clofs_width-1:0] s0_clofs; // what offset are we currently reading from

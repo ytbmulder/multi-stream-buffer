@@ -1,0 +1,87 @@
+[*]
+[*] GTKWave Analyzer v3.3.82 (w)1999-2017 BSI
+[*] Sat Jan 20 12:24:18 2018
+[*]
+[dumpfile] "/Users/ytbmulder/Google Drive/Thesis/Verilog/stream-cache/work/apl_top_tb.vcd"
+[dumpfile_mtime] "Sat Jan 20 11:20:34 2018"
+[dumpfile_size] 123758501
+[savefile] "/Users/ytbmulder/Google Drive/Thesis/Verilog/stream-cache/sim/apl_top_tb_example_1.gtkw"
+[timestart] 10307
+[size] 1440 852
+[pos] -1 -1
+*-4.000000 -1 10322 10330 10338 10346 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] apl_top_tb.
+[treeopen] apl_top_tb.IDUT.
+[treeopen] apl_top_tb.IDUT.is0_bram_top.GEN_bram_top[0].
+[treeopen] apl_top_tb.IDUT.is0_bram_top.GEN_bram_top[0].is0_bram_top.
+[treeopen] apl_top_tb.IDUT.is0_bram_top.GEN_bram_top[0].is0_bram_top.GEN_SLICES[0].SLICE.
+[treeopen] apl_top_tb.IDUT.is0_bram_top.GEN_bram_top[0].is0_bram_top.GEN_SLICES[0].SLICE.GEN_WAYS[0].BRAM.
+[treeopen] apl_top_tb.IDUT.is0_bram_top.GEN_bram_top[0].is0_bram_top.SINK.i_fifo.
+[treeopen] apl_top_tb.IDUT.is0_bram_top.GEN_bram_top[0].is0_bram_top.SINK.i_fifo.gen_ram.
+[treeopen] apl_top_tb.IDUT.is0_l1_ctrl_top.
+[treeopen] apl_top_tb.IDUT.is0_l1_ctrl_top.gen1[1].iport.
+[treeopen] apl_top_tb.IDUT.is0_l1_ctrl_top.gen2[15].
+[treeopen] apl_top_tb.IDUT.is0_l1_ctrl_top.gen2[21].
+[treeopen] apl_top_tb.IDUT.is0_l1_ctrl_top.gen2[5].
+[treeopen] apl_top_tb.IDUT.is0_l1_ctrl_top.gen2[6].
+[treeopen] apl_top_tb.IDUT.is0_l1_ctrl_top.gen2[7].
+[treeopen] apl_top_tb.IDUT.is0_l2_ctrl_top.GEN_MERGE[0].
+[treeopen] apl_top_tb.IDUT.is0_l2_ctrl_top.GEN_PTR[0].
+[treeopen] apl_top_tb.IDUT.is0_l2_ctrl_top.GEN_PTR[15].
+[sst_width] 193
+[signals_width] 202
+[sst_expanded] 1
+[sst_vpaned_height] 301
+@28
+apl_top_tb.IDUT.clk1x
+apl_top_tb.IDUT.clk2x
+apl_top_tb.IDUT.reset
+@200
+-AFU REQUEST
+@28
+apl_top_tb.IDUT.i_rd_v[3:0]
+apl_top_tb.IDUT.i_rd_r[3:0]
+@24
+apl_top_tb.\i_rd_sid_2d[0][5:0]
+apl_top_tb.\i_rd_sid_2d[1][5:0]
+apl_top_tb.\i_rd_sid_2d[2][5:0]
+apl_top_tb.\i_rd_sid_2d[3][5:0]
+@200
+-AFU RESPONSE
+@28
+apl_top_tb.IDUT.o_rd_v[3:0]
+apl_top_tb.IDUT.o_rd_r[3:0]
+@24
+apl_top_tb.\o_rd_sid_2d[0][5:0]
+@22
+apl_top_tb.\o_rd_d_2d[0][127:0]
+@24
+apl_top_tb.\o_rd_sid_2d[1][5:0]
+@22
+apl_top_tb.\o_rd_d_2d[1][127:0]
+@24
+apl_top_tb.\o_rd_sid_2d[2][5:0]
+@22
+apl_top_tb.\o_rd_d_2d[2][127:0]
+@24
+apl_top_tb.\o_rd_sid_2d[3][5:0]
+@22
+apl_top_tb.\o_rd_d_2d[3][127:0]
+@200
+-
+-STREAM 5
+@24
+apl_top_tb.IDUT.is0_l1_ctrl_top.gen2[5].i_stream_ptr.s0_clofs[2:0]
+apl_top_tb.IDUT.is0_l1_ctrl_top.gen2[5].i_stream_ptr.s0_clid[3:0]
+@200
+-STREAM 6
+@24
+apl_top_tb.IDUT.is0_l1_ctrl_top.gen2[6].i_stream_ptr.s0_clofs[2:0]
+apl_top_tb.IDUT.is0_l1_ctrl_top.gen2[6].i_stream_ptr.s0_clid[3:0]
+@200
+-STREAM 7
+@24
+apl_top_tb.IDUT.is0_l1_ctrl_top.gen2[7].i_stream_ptr.s0_clofs[2:0]
+apl_top_tb.IDUT.is0_l1_ctrl_top.gen2[7].i_stream_ptr.s0_clid[3:0]
+[pattern_trace] 1
+[pattern_trace] 0

@@ -63,6 +63,8 @@ module bram_slice #
     .q      (sel)
   );
 
+  wire [DATA_WIDTH-1:0] s1a_rd, s1b_rd;
+
   // MUX for element select.
   base_emux_le # (
     .width  (DATA_WIDTH),
@@ -70,7 +72,26 @@ module bram_slice #
     ) MUXLE (
     .din    (s1_rd),
     .sel    (sel),
-    .dout   (o_rd)
+    .dout   (s1a_rd)
+  );
+
+  // Additional regs for timing closure. Especially for configurations with four channels.
+  base_vlat # (
+    .width  (DATA_WIDTH)
+    ) OUTPUT_REG_1 (
+    .clk    (clk2x),
+    .reset  (reset),
+    .din    (s1a_rd),
+    .q      (s1b_rd)
+  );
+
+  base_vlat # (
+    .width  (DATA_WIDTH)
+    ) OUTPUT_REG_2 (
+    .clk    (clk2x),
+    .reset  (reset),
+    .din    (s1b_rd),
+    .q      (o_rd)
   );
 
 endmodule

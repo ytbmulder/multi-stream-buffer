@@ -62,7 +62,8 @@ module l1_rd_port #
 //  assign s1_sid = s1_sids[(portid+1)*nstrms_width-1:portid*nstrms_width];
 
   // Is this read port servicing a L1 read request?
-  assign o_rd_act = s1_v & s1_r;
+  wire [1:0] s1b_v, s1b_r;
+  assign o_rd_act = s1b_v & s1b_r;
 
   // Make sure rd_ports does not end up in a deadlock by invalidating reqs in this module.
   // Reqs are invalidated by not asserting the input valid signal of the acombine module.
@@ -81,14 +82,44 @@ module l1_rd_port #
   wire [1:0] s1a_v, s1a_r; // 0: global pointer update vector, 1: L1 address
   base_acombine#(.ni(1),.no(2)) is1a_cmb(.i_v(s1_rd_v_test),.i_r(s1_r),.o_v(s1a_v),.o_r(s1a_r));
 
+  // Close timing, add reg. Chosen after combine to decrease comb path further.
+  wire [nstrms_width-1:0] s1_0_sid, s1_1_sid;
+  wire [nports*nstrms_width-1:0] s1_0_sids, s1_1_sids;
+  base_areg # (
+    .lbl(3'b110),
+    .width(nstrms_width+nports*nstrms_width)
+  ) is2_lat_close_1 (
+    .clk(clk),.reset(reset),
+    .i_v  (s1a_v[0]),
+    .i_r  (s1a_r[0]),
+    .i_d  ({s1_sids, s1_sid}),
+    .o_v  (s1b_v[0]),
+    .o_r  (s1b_r[0]),
+    .o_d  ({s1_0_sids, s1_0_sid})
+  );
+
+  base_areg # (
+    .lbl(3'b110),
+    .width(nstrms_width+nports*nstrms_width)
+  ) is2_lat_close_2 (
+    .clk(clk),.reset(reset),
+    .i_v  (s1a_v[1]),
+    .i_r  (s1a_r[1]),
+    .i_d  ({s1_sids, s1_sid}),
+    .o_v  (s1b_v[1]),
+    .o_r  (s1b_r[1]),
+    .o_d  ({s1_1_sids, s1_1_sid})
+  );
+
+
   // GLOBAL POINTER UPDATE VECTOR
   // demux valid and ready signals of flow[0] based on the stream id.
   wire [nstrms-1:0] s1_sid_dec;
   base_decode_le # (.enc_width(nstrms_width),.dec_width(nstrms)) is1_sid_dec (
-    .din(s1_sid),.dout(s1_sid_dec),.en(1'b1)); // decodes the input stream id from a read port.
+    .din(s1_0_sid),.dout(s1_sid_dec),.en(1'b1)); // decodes the input stream id from a read port.
   wire [nstrms-1:0] s1_req_v;
   base_ademux # (.ways(nstrms)) is1_demux (
-    .i_v(s1a_v[0]),.i_r(s1a_r[0]),.o_v(o_req_v),.o_r(o_req_r),.sel(s1_sid_dec));
+    .i_v(s1b_v[0]),.i_r(s1b_r[0]),.o_v(o_req_v),.o_r(o_req_r),.sel(s1_sid_dec));
 
   // L1 ADDRESS CALCULATION
   // select the current pointer for this stream based on the stream id.
@@ -96,7 +127,7 @@ module l1_rd_port #
   base_emux_le # (.ways(nstrms),.width(ptr_width)) is1_ptr_mux (
     .din(i_ptrs),       // array with all current (not updated) pointers.
     .dout(s1_ptr),      // current (not updated) pointer for stream s1_sid.
-    .sel(s1_sid)
+    .sel(s1_1_sid)
   );
 
   // Generate which stream ids to compare for a particular read port.
@@ -108,7 +139,7 @@ module l1_rd_port #
       wire [portid-1:0] s1_hit;
 
       for(i=0; i<portid; i=i+1) begin : GEN_HIT
-        assign s1_hit[i] = i_rd_acts[i] & (s1_sid == s1_sids[(i+1)*nstrms_width-1:i*nstrms_width]); // compare stream id for this read port to stream id from the previous read ports.
+        assign s1_hit[i] = i_rd_acts[i] & (s1_1_sid == s1_1_sids[(i+1)*nstrms_width-1:i*nstrms_width]); // compare stream id for this read port to stream id from the previous read ports.
       end
 
       wire [inc_width-1:0] s1_ptr_inc;
@@ -126,10 +157,10 @@ module l1_rd_port #
     end
   endgenerate
 
-  assign o_addr_sid = s1_sid;
+  assign o_addr_sid = s1_1_sid;
   //assign o_addr_sid = o_rd_act ? i_rd_sid : {nstrms_width{1'b0}}; // TODO: add condition to either output i_rd_sid or zero. Also for o_addr_ptr.
-  assign o_addr_v = s1a_v[1];
-  assign s1a_r[1] = o_addr_r;
+  assign o_addr_v = s1b_v[1];
+  assign s1b_r[1] = o_addr_r;
 
   // not valid L1 read (out of bounds) when L2 stream has ended & when reading last valid line (thus L1 has not yet ended) & when we carry and thus want to read the next valid line which doesnt exist.
   // TODO: use emux_le module for i_rst_end[] and i_single_v
@@ -150,7 +181,7 @@ module l1_rd_port #
   // TODO: o_rst_end = ncl_v_zero & i_rst_end & ncl_req_zero
 
 
-
+/*
   // Internal read counters.
   integer counter = 0;
   integer counter_o_addr_act = 0;
@@ -167,6 +198,7 @@ module l1_rd_port #
       counter2 = counter2 + 1;
     counter_i_rd_act = counter2 / 8;
   end
+*/
 //------------------------------------------
 
 endmodule // l1_rd_port

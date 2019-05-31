@@ -247,7 +247,7 @@ module apl_top #
   // Select decode module for the MUX.
   wire [channels-1:0] s1_ch_dec;
   base_decode_le#(.enc_width(channels_width),.dec_width(channels)) is1_rsp_dec (
-    .din        (s1_wa[L2_RAM_DEPTH_WIDTH+channels_width-1]),
+    .din        (s1_wa[L2_RAM_DEPTH_WIDTH+channels_width-1:L2_RAM_DEPTH_WIDTH]),
     .dout       (s1_ch_dec),
     .en         (1'b1)
   );
@@ -261,7 +261,7 @@ module apl_top #
     .i_r(s1_reg_r),
     .sel(s1_ch_dec),
     .o_v(i_we_dec),
-    .o_r(2'b11)
+    .o_r({channels{1'b1}})
   );
 
   // Generate URAM modules for L2.

@@ -1,0 +1,75 @@
+[*]
+[*] GTKWave Analyzer v3.3.82 (w)1999-2017 BSI
+[*] Sat Jan 20 18:47:42 2018
+[*]
+[dumpfile] "/Users/ytbmulder/Google Drive/Thesis/Verilog/stream-cache/work/apl_top_tb.vcd"
+[dumpfile_mtime] "Sat Jan 20 15:50:54 2018"
+[dumpfile_size] 184578575
+[savefile] "/Users/ytbmulder/Google Drive/Thesis/Verilog/stream-cache/sim/apl_top_tb_example_3b.gtkw"
+[timestart] 11970
+[size] 1440 852
+[pos] -1 -1
+*-4.000000 -1 11998 12000 12004 12016 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] apl_top_tb.
+[treeopen] apl_top_tb.IDUT.
+[treeopen] apl_top_tb.IDUT.is0_l1_ctrl_top.
+[treeopen] apl_top_tb.IDUT.is0_l1_ctrl_top.gen1[0].
+[treeopen] apl_top_tb.IDUT.is0_l1_ctrl_top.gen1[1].iport.
+[treeopen] apl_top_tb.IDUT.is0_l1_ctrl_top.gen2[21].
+[treeopen] apl_top_tb.IDUT.is0_l1_ctrl_top.gen2[5].
+[treeopen] apl_top_tb.IDUT.is0_l2_ctrl_top.GEN_PTR[21].
+[treeopen] apl_top_tb.IDUT.is0_l2_ctrl_top.GEN_PTR[5].
+[sst_width] 193
+[signals_width] 210
+[sst_expanded] 1
+[sst_vpaned_height] 301
+@28
+apl_top_tb.IDUT.clk1x
+apl_top_tb.IDUT.clk2x
+apl_top_tb.IDUT.reset
+@200
+-
+-AFU REQUEST
+@22
+apl_top_tb.i_rd_v[7:0]
+@24
+apl_top_tb.\i_rd_sid_2d[0][5:0]
+apl_top_tb.\i_rd_sid_2d[1][5:0]
+@200
+-
+-AFU RESPONSE
+@22
+apl_top_tb.o_rd_v[7:0]
+apl_top_tb.\o_rd_d_2d[0][127:0]
+apl_top_tb.\o_rd_d_2d[1][127:0]
+@200
+-
+-STREAM 5
+@24
+apl_top_tb.IDUT.is0_l1_ctrl_top.gen2[5].i_stream_ptr.s0_ncl_req[4:0]
+apl_top_tb.IDUT.is0_l1_ctrl_top.gen2[5].i_stream_ptr.s0_ncl[4:0]
+apl_top_tb.IDUT.is0_l1_ctrl_top.gen2[5].i_stream_ptr.s0_clid[3:0]
+apl_top_tb.IDUT.is0_l1_ctrl_top.gen2[5].i_stream_ptr.s0_clofs[2:0]
+@200
+-
+-READ PORT 0
+@28
+apl_top_tb.IDUT.is0_l1_ctrl_top.gen1[0].iport.i_rd_v
+apl_top_tb.IDUT.is0_l1_ctrl_top.gen1[0].iport.s1_rd_v_test
+@200
+-
+-READ PORT 1
+@28
+apl_top_tb.IDUT.is0_l1_ctrl_top.gen1[1].iport.i_rd_v
+apl_top_tb.IDUT.is0_l1_ctrl_top.gen1[1].iport.s1_rd_v
+apl_top_tb.IDUT.is0_l1_ctrl_top.gen1[1].iport.out_of_bounds_rd_port
+apl_top_tb.IDUT.is0_l1_ctrl_top.gen1[1].iport.s1_rd_v_test
+@200
+-
+-
+@28
+apl_top_tb.IDUT.is0_l1_ctrl_top.gen1[1].iport.o_addr_ptr[6:0]
+apl_top_tb.IDUT.is0_l1_ctrl_top.gen1[1].iport.GEN_ADDR_PTR.add[3:0]
+apl_top_tb.IDUT.is0_l1_ctrl_top.gen1[1].iport.carry_bit
+[pattern_trace] 1
+[pattern_trace] 0

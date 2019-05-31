@@ -42,6 +42,29 @@ module bram_top #
   input  [channels*WAYS*DATA_WIDTH-1:0] i_wd
 );
 
+  // Close timing; add routing vlats.
+  localparam tmp = channels+channels*ADDR_WIDTH+channels*WAYS*DATA_WIDTH;
+  wire [channels-1:0]                 i_we_a, i_we_b;
+  wire [channels*ADDR_WIDTH-1:0]      i_wa_a, i_wa_b;
+  wire [channels*WAYS*DATA_WIDTH-1:0] i_wd_a, i_wd_b;
+  base_vlat # (
+    .width  (tmp)
+    ) WRITE_1 (
+    .clk    (clk2x),
+    .reset  (reset),
+    .din    ({i_we, i_wa, i_wd}),
+    .q      ({i_we_a, i_wa_a, i_wd_a})
+  );
+
+  base_vlat # (
+    .width  (tmp)
+    ) WRITE_2 (
+    .clk    (clk2x),
+    .reset  (reset),
+    .din    ({i_we_a, i_wa_a, i_wd_a}),
+    .q      ({i_we_b, i_wa_b, i_wd_b})
+  );
+
   // Input register.
   wire s1_v, s1_r;
   wire [channels_width-1:0]  s1_ra_ch;
@@ -54,7 +77,7 @@ module bram_top #
   // TODO: width incorrent when channels = 1.
   base_areg # (
     .width  (channels_width+WAYS_WIDTH+ADDR_WIDTH-1),
-    .lbl    (3'b110)
+    .lbl    (3'b111) // Extra stage to close timing for N64-P8-F200
     ) S1_FF (
     .clk    (clk1x),
     .reset  (reset),
@@ -66,7 +89,7 @@ module bram_top #
     .o_d    ({s1_ra_ch, s1_ra_st, s1_ra_cl, s1_ra_of})
   );
 
-  localparam crdts = 6; //TODO: lower results in not being able to handle read bursts.
+  localparam crdts = 7; //TODO: lower results in not being able to handle read bursts.
   wire st_v, st_r;
   wire s1_credit;
   base_acredit_src # (
@@ -99,7 +122,7 @@ module bram_top #
   wire [ra_out_width-1:0] s2_ra_out;
   base_areg # (
     .width  (ra_out_width),
-    .lbl    (3'b110)
+    .lbl    (3'b111) // Two cycles for timing closure.
     ) S1B_FF (
     .clk    (clk1x),
     .reset  (reset),
@@ -128,9 +151,9 @@ module bram_top #
         .clk1x      (clk1x),
         .clk2x      (clk2x),
         .reset      (reset),
-        .i_we       (i_we[i]),
-        .i_wa       (i_wa[(i+1)*ADDR_WIDTH-1:i*ADDR_WIDTH]),
-        .i_wd       (i_wd[(i+1)*WAYS*DATA_WIDTH-1:i*WAYS*DATA_WIDTH]),
+        .i_we       (i_we_b[i]),
+        .i_wa       (i_wa_b[(i+1)*ADDR_WIDTH-1:i*ADDR_WIDTH]),
+        .i_wd       (i_wd_b[(i+1)*WAYS*DATA_WIDTH-1:i*WAYS*DATA_WIDTH]),
         .i_re       (s1_re),
         .i_ra       (s1_ra),
         .o_rd       (s2_rd[(i+1)*DATA_WIDTH-1:i*DATA_WIDTH])
@@ -148,13 +171,22 @@ module bram_top #
     end
     else if( channels > 1 ) begin
       // Channel select MUX.
-      wire [channels_width-1:0] s2_sel;
+      wire [channels_width-1:0] s2_sel, s2a_sel;
       base_vlat # (
         .width  (channels_width)
         ) CH_VLAT (
         .clk    (clk1x),
         .reset  (reset),
         .din    (s1_ra_ch),
+        .q      (s2a_sel)
+      );
+
+      base_vlat # (
+        .width  (channels_width)
+        ) CH_VLAT_2 (
+        .clk    (clk1x),
+        .reset  (reset),
+        .din    (s2a_sel),
         .q      (s2_sel)
       );
 

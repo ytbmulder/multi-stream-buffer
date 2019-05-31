@@ -6,9 +6,9 @@ module apl_top_tb;
   parameter cache_line_width            = $clog2(cache_line);
 
   // Stream cache parameters
-  parameter nstrms                      = 32;
+  parameter nstrms                      = 64;
   parameter nstrms_width                = $clog2(nstrms);
-  parameter nports                      = 2;                  // Number of L1 read ports.
+  parameter nports                      = 4;                  // Number of L1 read ports.
   parameter cl_size                     = 8;                  // number of reads per cacheline - must be at least as big as the number of read ports
   parameter DATA_WIDTH                  = 8*8;                // 8 bytes per element
   parameter RAM_DEPTH                   = 512;                // double pump -> 256 16B
@@ -26,7 +26,7 @@ module apl_top_tb;
   parameter l2_nstrms_width             = $clog2(l2_nstrms);
   parameter l2_ncl                      = 128;                // TODO: change in the future. // Number of L2 cache lines per stream.
   parameter l2_ncl_width                = $clog2(l2_ncl);
-  parameter channels                    = 2;                  // nstrms/l2_nstrms
+  parameter channels                    = 4;                  // nstrms/l2_nstrms
   parameter channels_width              = $clog2(channels);
   parameter ra_out_width                = channels_width+l2_nstrms_width; // o_ra width.
   parameter L2_RAM_DEPTH                = 4096;
@@ -553,17 +553,299 @@ module apl_top_tb;
     // Set interfaces to be ready.
     rest( 8 );
 
+    // Example 3a - read before functional reset.
+    //tsk_afu_rd( 1, 5 );
+    //#4;
+    //rest( 100 );
+
+
     // Functionally reset all streams.
     //for( rst_sid=0; rst_sid<nstrms; rst_sid=rst_sid+1 ) begin
     //  tsk_func_rst( rst_sid );
     //  rest( 100 );
     //end
 
+    tsk_func_rst(0);
+    #4;
+    tsk_func_rst(1);
+    #4;
+    tsk_func_rst(2);
+    #4;
     tsk_func_rst(3);
-    rest(1000);
+    #4;
+    tsk_func_rst(4);
+    #4;
+    tsk_func_rst(5);
+    #4;
+    tsk_func_rst(6);
+    #4;
+    tsk_func_rst(7);
+    #4;
+    tsk_func_rst(8);
+    #4;
+    tsk_func_rst(9);
+    #4;
+    tsk_func_rst(10);
+    #4;
+    tsk_func_rst(11);
+    #4;
+    tsk_func_rst(12);
+    #4;
+    tsk_func_rst(13);
+    #4;
+    tsk_func_rst(14);
+    #4;
+    tsk_func_rst(15);
+    #4;
+    rest(10000);
     //tsk_func_rst(21);
     //rest(100);
 
+/*
+    // EXAMPLE 3b - termination of stream mid-cycle.
+    repeat( 382 ) begin
+      tsk_afu_rd( 0, 5 );
+      tsk_afu_rd( 1, 5 );
+      tsk_afu_rd( 2, 5 );
+      tsk_afu_rd( 3, 5 );
+      tsk_afu_rd( 4, 5 );
+      tsk_afu_rd( 5, 5 );
+      tsk_afu_rd( 6, 5 );
+      tsk_afu_rd( 7, 5 );
+      #4;
+    end
+    // read one element.
+    tsk_afu_rd( 0, 5 );
+    tsk_afu_rd( 1, 5 );
+    tsk_afu_rd( 2, 5 );
+    tsk_afu_rd( 3, 5 );
+    tsk_afu_rd( 4, 5 );
+    tsk_afu_rd( 5, 5 );
+    #4;
+    // Some rest time
+    rest( 100 );
+    // final elemnts read stream 5.
+    tsk_afu_rd( 0, 5 );
+//    tsk_afu_rd( 1, 5 );
+    #4;
+    // final elemnts read stream 5.
+    tsk_afu_rd( 0, 5 );
+    #4;
+    tsk_afu_rd( 0, 5 );
+    #4;
+    tsk_afu_rd( 0, 5 );
+    #4;
+    tsk_afu_rd( 0, 5 );
+    #4;
+    tsk_afu_rd( 0, 5 );
+    #4;
+    tsk_afu_rd( 0, 5 );
+    #4;
+    rest( 100 );
+    // two elements left to read.
+    tsk_afu_rd( 0, 5 );
+    tsk_afu_rd( 1, 5 );
+    #4;
+    */
+
+
+    // REQUIRES 4 READ PORTS
+    // Pre-read Example 1c.
+    tsk_afu_rd( 0, 5 );
+    tsk_afu_rd( 1, 5 );
+    tsk_afu_rd( 2, 5 );
+    //tsk_afu_rd( 3, 5 );
+    #4;
+    rest( 4 );
+
+    // Example 1 - Pre-read streams for Example 1d.
+    repeat( 3 ) begin
+      tsk_afu_rd( 0, 6 );
+      tsk_afu_rd( 1, 6 );
+      tsk_afu_rd( 2, 7 );
+      tsk_afu_rd( 3, 7 );
+      #4;
+    end
+    rest( 64 );
+
+    // Example 1a - All reads from same stream.
+    tsk_afu_rd( 0, 5 );
+    tsk_afu_rd( 1, 5 );
+    tsk_afu_rd( 2, 5 );
+    tsk_afu_rd( 3, 5 );
+    #4;
+    rest( 4 );
+
+    // Example 1b - All reads from different streams.
+    tsk_afu_rd( 0, 6 );
+    tsk_afu_rd( 1, 7 );
+    tsk_afu_rd( 2, 8 );
+    tsk_afu_rd( 3, 9 );
+    #4;
+    rest( 4 );
+
+    // Example 1c - Crossing a cache line boundary.
+
+
+    tsk_afu_rd( 0, 5 );
+    tsk_afu_rd( 1, 5 );
+    tsk_afu_rd( 2, 5 );
+    tsk_afu_rd( 3, 5 );
+    #4;
+    rest( 4 );
+
+    // Example 1d - Crossing two cache line boundaries.
+    tsk_afu_rd( 0, 6 );
+    tsk_afu_rd( 1, 6 );
+    tsk_afu_rd( 2, 7 );
+    tsk_afu_rd( 3, 7 );
+    #4;
+    rest( 4 );
+
+
+
+
+/*
+    // BUFFER SIZE FOR 4 READ PORTS
+    // Access pattern 1 for 8 cycles.
+    // Read first 8 streams.
+    repeat( 7 ) begin
+      tsk_afu_rd( 0, 0 );
+      tsk_afu_rd( 1, 1 );
+      tsk_afu_rd( 2, 2 );
+      tsk_afu_rd( 3, 3 );
+      //tsk_afu_rd( 4, 4 );
+      //tsk_afu_rd( 5, 5 );
+      //tsk_afu_rd( 6, 6 );
+      //tsk_afu_rd( 7, 7 );
+      #4;
+    end
+    repeat( 7 ) begin
+      tsk_afu_rd( 0, 4 );
+      tsk_afu_rd( 1, 5 );
+      tsk_afu_rd( 2, 6 );
+      tsk_afu_rd( 3, 7 );
+      #4;
+    end
+    // Read second 8 streams.
+    repeat( 7 ) begin
+      tsk_afu_rd( 0, 8 );
+      tsk_afu_rd( 1, 9 );
+      tsk_afu_rd( 2, 10 );
+      tsk_afu_rd( 3, 11 );
+      //tsk_afu_rd( 4, 12 );
+      //tsk_afu_rd( 5, 13 );
+      //tsk_afu_rd( 6, 14 );
+      //tsk_afu_rd( 7, 15 );
+      #4;
+    end
+    repeat( 7 ) begin
+      tsk_afu_rd( 0, 12 );
+      tsk_afu_rd( 1, 13 );
+      tsk_afu_rd( 2, 14 );
+      tsk_afu_rd( 3, 15 );
+      #4;
+    end
+    // Trigger L2 requests.
+    tsk_afu_rd( 0, 0 );
+    tsk_afu_rd( 1, 1 );
+    tsk_afu_rd( 2, 2 );
+    tsk_afu_rd( 3, 3 );
+    #4;
+    tsk_afu_rd( 0, 4 );
+    tsk_afu_rd( 1, 5 );
+    tsk_afu_rd( 2, 6 );
+    tsk_afu_rd( 3, 7 );
+    #4;
+    tsk_afu_rd( 0, 8 );
+    tsk_afu_rd( 1, 9 );
+    tsk_afu_rd( 2, 10 );
+    tsk_afu_rd( 3, 11 );
+    #4;
+    tsk_afu_rd( 0, 12 );
+    tsk_afu_rd( 1, 13 );
+    tsk_afu_rd( 2, 14 );
+    tsk_afu_rd( 3, 15 );
+    #4;
+
+    // Access pattern 2.
+    repeat( 64 ) begin
+      tsk_afu_rd( 0, 15 );
+      tsk_afu_rd( 1, 15 );
+      tsk_afu_rd( 2, 15 );
+      tsk_afu_rd( 3, 15 );
+      //tsk_afu_rd( 4, 15 );
+      //tsk_afu_rd( 5, 15 );
+      //tsk_afu_rd( 6, 15 );
+      //tsk_afu_rd( 7, 15 );
+      #4;
+    end
+*/
+
+/*
+    // BUFFER SIZE FOR 8 READ PORTS
+    // Access pattern 1 for 8 cycles.
+    // Read first 8 streams.
+    repeat( 7 ) begin
+      tsk_afu_rd( 0, 0 );
+      tsk_afu_rd( 1, 1 );
+      tsk_afu_rd( 2, 2 );
+      tsk_afu_rd( 3, 3 );
+      tsk_afu_rd( 4, 4 );
+      tsk_afu_rd( 5, 5 );
+      tsk_afu_rd( 6, 6 );
+      tsk_afu_rd( 7, 7 );
+      #4;
+    end
+    // Read second 8 streams.
+    repeat( 7 ) begin
+      tsk_afu_rd( 0, 8 );
+      tsk_afu_rd( 1, 9 );
+      tsk_afu_rd( 2, 10 );
+      tsk_afu_rd( 3, 11 );
+      tsk_afu_rd( 4, 12 );
+      tsk_afu_rd( 5, 13 );
+      tsk_afu_rd( 6, 14 );
+      tsk_afu_rd( 7, 15 );
+      #4;
+    end
+    // Trigger L2 requests.
+    tsk_afu_rd( 0, 0 );
+    tsk_afu_rd( 1, 1 );
+    tsk_afu_rd( 2, 2 );
+    tsk_afu_rd( 3, 3 );
+    tsk_afu_rd( 4, 4 );
+    tsk_afu_rd( 5, 5 );
+    tsk_afu_rd( 6, 6 );
+    tsk_afu_rd( 7, 7 );
+    #4;
+    tsk_afu_rd( 0, 8 );
+    tsk_afu_rd( 1, 9 );
+    tsk_afu_rd( 2, 10 );
+    tsk_afu_rd( 3, 11 );
+    tsk_afu_rd( 4, 12 );
+    tsk_afu_rd( 5, 13 );
+    tsk_afu_rd( 6, 14 );
+    tsk_afu_rd( 7, 15 );
+    #4;
+
+    // Access pattern 2.
+    repeat( 64 ) begin
+      tsk_afu_rd( 0, 15 );
+      tsk_afu_rd( 1, 15 );
+      tsk_afu_rd( 2, 15 );
+      tsk_afu_rd( 3, 15 );
+      tsk_afu_rd( 4, 15 );
+      tsk_afu_rd( 5, 15 );
+      tsk_afu_rd( 6, 15 );
+      tsk_afu_rd( 7, 15 );
+      #4;
+    end
+
+*/
+
+
+/*
     // Read random streams from two read ports.
     repeat( 191*8 +4 ) begin
       //tsk_afu_rd( 0, $urandom_range( nstrms-1, 0 ) ); // port id, sid
@@ -595,8 +877,10 @@ module apl_top_tb;
     tsk_afu_rd(0, 3);
     tsk_afu_rd(1, 3);
     #4;
+*/
 
     rest( 100 );
+
 
 
 
@@ -650,7 +934,7 @@ module apl_top_tb;
     // TODO: test what happens if L1 keeps reading from L2. Will the number of outstanding requests (counter) surpass 256?
 */
 
-
+    $display("%0d", $clog2(1) );
 
     // Print stream statistics.
     $display(); // Print empty line.

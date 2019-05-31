@@ -178,6 +178,15 @@ module l2_stream_ptr #
   assign i_rsp_r = 1'b1; // This module is always ready to accept a response.
 
   // Real end of stream valid signal. No outstanding reqs nor valid lines available.
-  assign o_rst_end = s0_en_rst;
+  // Add register to reduce critical path.
+  base_vlat # (
+      .width  (1)
+  ) is1_rst_lat (
+      .clk    (clk),
+      .reset  (reset),
+      .din    (s0_en_rst),
+      .q      (o_rst_end)
+  );
+  //assign o_rst_end = s0_en_rst;
 
 endmodule // l2_stream_ptr
